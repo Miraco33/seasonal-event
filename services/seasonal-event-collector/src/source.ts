@@ -67,7 +67,7 @@ export function parseTimeWindow(text: string): { startAt: string; endAt: string 
   const endYear = explicitEndYear || (Number(endMonth) < Number(startMonth) ? String(Number(year) + 1) : year);
   const endMinuteDate = new Date(`${endYear}-${pad(endMonth)}-${pad(endDay)}T${pad(endHour)}:${endMinute}:00+08:00`);
   endMinuteDate.setMinutes(endMinuteDate.getMinutes() + 1);
-  return { startAt: start, endAt: endMinuteDate.toISOString() };
+  return { startAt: start, endAt: toChinaOffsetISOString(endMinuteDate) };
 }
 
 export function extractCoordinates(text: string): { x: number; y: number } | null {
@@ -76,7 +76,15 @@ export function extractCoordinates(text: string): { x: number; y: number } | nul
 }
 
 export function resolveLocation(id: string, coordinates: { x: number; y: number } | null) {
-  const overrides = JSON.parse(process.env.LOCATION_OVERRIDES || "{}") as Record<string, { territoryId: number; mapId: number; x: number; y: number; z: number }>;
+  const overrides = JSON.parse(process.env.LOCATION_OVERRIDES || "{}") as Record<string, {
+    territoryId: number;
+    mapId: number;
+    x: number;
+    y: number;
+    z: number;
+    displayX?: number;
+    displayY?: number;
+  }>;
   const override = overrides[id];
   if (!override) throw new Error(`missing LOCATION_OVERRIDES entry for event: ${id}`);
   return coordinates
@@ -196,3 +204,9 @@ function slugify(value: string): string {
 }
 
 function pad(value: string): string { return value.padStart(2, "0"); }
+
+function toChinaOffsetISOString(value: Date): string {
+  return new Date(value.getTime() + 8 * 60 * 60 * 1000)
+    .toISOString()
+    .replace(".000Z", "+08:00");
+}

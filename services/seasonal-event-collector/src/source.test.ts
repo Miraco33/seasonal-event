@@ -20,7 +20,7 @@ test("parses the 2026 Rising time window and makes the end exclusive", () => {
   const result = parseTimeWindow("2026年8月27日15:00 ～ 9月10日22:59");
   assert.deepEqual(result, {
     startAt: "2026-08-27T15:00:00+08:00",
-    endAt: "2026-09-10T15:00:00.000Z",
+    endAt: "2026-09-10T23:00:00+08:00",
   });
 });
 
@@ -54,7 +54,7 @@ test("rejects a page without a complete time window", () => {
 test("handles an event whose end date crosses into the next year", () => {
   assert.deepEqual(parseTimeWindow("2026年12月20日15:00 ～ 1月5日22:59"), {
     startAt: "2026-12-20T15:00:00+08:00",
-    endAt: "2027-01-05T15:00:00.000Z",
+    endAt: "2027-01-05T23:00:00+08:00",
   });
 });
 
@@ -83,7 +83,7 @@ test("resolves world coordinates only from the matching event override", () => {
 test("uses a verified world-coordinate override when the page has no displayed coordinates", () => {
   const previousOverrides = process.env.LOCATION_OVERRIDES;
   process.env.LOCATION_OVERRIDES = JSON.stringify({
-    "the-rising-2026": { territoryId: 128, mapId: 11, x: -9.61439, y: 39.9998, z: 82.0985 },
+    "the-rising-2026": { territoryId: 128, mapId: 11, x: -9.61439, y: 39.9998, z: 82.0985, displayX: 11, displayY: 12.8 },
   });
 
   try {
@@ -93,6 +93,8 @@ test("uses a verified world-coordinate override when the page has no displayed c
       x: -9.61439,
       y: 39.9998,
       z: 82.0985,
+      displayX: 11,
+      displayY: 12.8,
     });
   } finally {
     if (previousOverrides === undefined) delete process.env.LOCATION_OVERRIDES;
