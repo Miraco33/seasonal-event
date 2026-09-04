@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "unknown",
-  "code": "not_evaluated",
+  "status": "alert",
+  "code": "event_ending_without_candidate",
   "candidates": []
 }
