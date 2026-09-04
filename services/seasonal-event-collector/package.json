@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "test": "node --test dist/*.test.js"
+    "test": "node --test dist/*.test.js",
+    "audit:history": "npm run build && node scripts/audit-history.mjs"
   },
   "dependencies": {
     "playwright": "1.52.0"

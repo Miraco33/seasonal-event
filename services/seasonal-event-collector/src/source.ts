@@ -60,18 +60,29 @@ async function parseDetailPage(page: Page, url: string): Promise<SeasonalEvent> 
 }
 
 export function parseTimeWindow(text: string): { startAt: string; endAt: string } | null {
+  const splitBoundary = text.match(/(\d{4})年(\d{1,2})月(\d{1,2})日\s*(\d{1,2}):(\d{2})\s*开始\s+(\d{4})年(\d{1,2})月(\d{1,2})日\s*(\d{1,2}):(\d{2})\s*结束/);
+  if (splitBoundary) {
+    const [, startYear, startMonth, startDay, startHour, startMinute, endYear, endMonth, endDay, endHour, endMinute] = splitBoundary;
+    return {
+      startAt: `${startYear}-${pad(startMonth)}-${pad(startDay)}T${pad(startHour)}:${startMinute}:00+08:00`,
+      endAt: `${endYear}-${pad(endMonth)}-${pad(endDay)}T${pad(endHour)}:${endMinute}:00+08:00`,
+    };
+  }
+
   const match = text.match(/(\d{4})年(\d{1,2})月(\d{1,2})日\s*(\d{1,2}):(\d{2})\s*[～~至-]\s*(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日\s*(\d{1,2}):(\d{2})/);
   if (!match) return null;
   const [, year, startMonth, startDay, startHour, startMinute, explicitEndYear, endMonth, endDay, endHour, endMinute] = match;
   const start = `${year}-${pad(startMonth)}-${pad(startDay)}T${pad(startHour)}:${startMinute}:00+08:00`;
   const endYear = explicitEndYear || (Number(endMonth) < Number(startMonth) ? String(Number(year) + 1) : year);
   const endMinuteDate = new Date(`${endYear}-${pad(endMonth)}-${pad(endDay)}T${pad(endHour)}:${endMinute}:00+08:00`);
-  endMinuteDate.setMinutes(endMinuteDate.getMinutes() + 1);
+  // Official pages use xx:59 to mean the whole final minute is included. Exact
+  // boundary times such as 14:00 are already exclusive and must not be extended.
+  if (Number(endMinute) === 59) endMinuteDate.setMinutes(endMinuteDate.getMinutes() + 1);
   return { startAt: start, endAt: toChinaOffsetISOString(endMinuteDate) };
 }
 
 export function extractCoordinates(text: string): { x: number; y: number } | null {
-  const match = text.match(/X\s*[:：]\s*([\d.]+)\s*Y\s*[:：]\s*([\d.]+)/i);
+  const match = text.match(/X\s*[:：]\s*([\d.]+)\s*[,，、]?\s*Y\s*[:：]\s*([\d.]+)/i);
   return match ? { x: Number(match[1]), y: Number(match[2]) } : null;
 }
 
@@ -174,13 +185,25 @@ export function extractQuestName(text: string, title: string): string | null {
 
 export function extractNpc(text: string): string | null {
   for (const line of text.split(/\r?\n/).map(value => value.trim()).filter(Boolean)) {
-    const labeled = line.match(/NPC\s*[:：]?\s*["“]?([^"”\n]{2,40})["”]?/i);
-    if (labeled?.[1]) return labeled[1].trim();
-    const sentence = line.match(/^[^。\n]{1,50}?的(.{2,40}?)(?:有点|似乎|想要|正在|希望|需要)/);
-    if (sentence?.[1]) return sentence[1].trim();
+    const quoted = line.match(/NPC\s*[:：]?\s*["“]([^"”\n]{2,40})["”]/i);
+    if (quoted?.[1]) return cleanNpcName(quoted[1]);
+    const labeled = line.match(/NPC\s*[:：]?\s*([^，。\s"“”]{2,24}?)(?=对话|交谈|接取|，|。|\s|$)/i);
+    if (labeled?.[1]) return cleanNpcName(labeled[1]);
+    if (/(?:活动期间|任务|接取|所在地)/.test(line)) {
+      const appeared = line.match(/(?:会)?出现的?(.{2,30}?)(?=对话|交谈|。|所在地)/);
+      if (appeared?.[1]) return cleanNpcName(appeared[1]);
+    }
+    const sentence = line.match(/^[^。\n]{1,50}?的(.{2,40}?)(?:好像有事情|好像有事|有点|有事情|有事|有话|似乎|想要|想找|想请|在寻找|正在|希望|需要)/);
+    if (sentence?.[1]) return cleanNpcName(sentence[1]);
   }
 
   return null;
+}
+
+function cleanNpcName(value: string): string {
+  return value.trim()
+    .replace(/^冒险者行会的/, "")
+    .replace(/好像$/, "");
 }
 
 function extractLevel(text: string): number | null {

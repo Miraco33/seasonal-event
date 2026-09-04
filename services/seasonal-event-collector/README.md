@@ -13,6 +13,8 @@ npm test
 npm start -- --dry-run
 ```
 
+历史官网模板兼容性可用 `npm run audit:history` 复查；页面清单、结果基线和已知图片字段限制见 `../../docs/HISTORICAL_COMPATIBILITY.md`。
+
 若本机没有 Playwright 管理的 Chromium，但已经安装 Chrome 或 Edge，可把 `PLAYWRIGHT_EXECUTABLE_PATH` 指向浏览器可执行文件；Docker 镜像已自带匹配的浏览器，不需要设置。
 
 `SOURCE_URLS` 必须列出已经核验为季节活动详情页的完整 URL，多个地址用逗号分隔。盛趣综合新闻页同时包含版本专题、运营活动和常驻入口，不能可靠自动推断季节活动；缺少 `SOURCE_URLS` 时采集器会明确失败。

@@ -1,0 +1,23 @@
+[
+  { "label": "2026 新生庆典", "url": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html" },
+  { "label": "2026 彩蛋狩猎", "url": "https://actff1.web.sdo.com/project/20260310Hatching_tide/1m2eqt45g81r/" },
+  { "label": "2025 女儿节&彩蛋", "url": "https://actff1.web.sdo.com/project/20250310littleladiesdayhatchingtide/" },
+  { "label": "2025 金碟 Vol.2", "url": "https://actff1.web.sdo.com/project/20251105themakeitraincampaign/thk8d9406nls/mob.html" },
+  { "label": "2025 星芒节 Vol.2", "url": "https://actff1.web.sdo.com/project/20251202starlight/4o7n8g9g627o/" },
+  { "label": "2025 新生庆典 Vol.1", "url": "https://actff1.web.sdo.com/project/20250728therising/jo988iz9a8p1x5jr52cs4716471mk5/index.html" },
+  { "label": "2024 降神节", "url": "https://actff1.web.sdo.com/project/20240131Heavensturn/" },
+  { "label": "2024 恋人节", "url": "https://actff1.web.sdo.com/project/20240214ValentionesDay/" },
+  { "label": "2024 女儿节", "url": "https://actff1.web.sdo.com/project/20240301LittleLadiesDay/" },
+  { "label": "2024 彩蛋狩猎", "url": "https://actff1.web.sdo.com/project/20240327Hatchingtide/" },
+  { "label": "2024 金碟游乐场大庆典", "url": "https://actff1.web.sdo.com/project/20240621thegoldsaucer/" },
+  { "label": "2024 红莲节", "url": "https://actff1.web.sdo.com/project/20240807MoonfireFaire/index.html" },
+  { "label": "2024 新生庆典", "url": "https://actff1.web.sdo.com/project/20240816therising/" },
+  { "label": "2023 新生庆典", "url": "https://actff1.web.sdo.com/project/20230816therising/" },
+  { "label": "2023 红莲节", "url": "https://actff1.web.sdo.com/project/20230724MoonfireFaire/index.html" },
+  { "label": "2019 新生庆典", "url": "https://actff1.web.sdo.com/Project/190815TheRising/", "manualReview": ["time"] },
+  { "label": "2019 恋人节", "url": "https://actff1.web.sdo.com/project/190213ValentionesDay/", "manualReview": ["time"] },
+  { "label": "2015 女儿节", "url": "https://actff1.web.sdo.com/project/150306nverjie/", "manualReview": ["title", "location"] },
+  { "label": "2015 守护天节", "url": "https://actff1.web.sdo.com/project/151025halloween/", "manualReview": ["title", "location"] },
+  { "label": "2015 星芒节", "url": "https://actff1.web.sdo.com/project/141217xmj/", "manualReview": ["title", "multiple-locations"] },
+  { "label": "2015 新生庆典", "url": "https://actff1.web.sdo.com/project/150702aan/rising.html", "manualReview": ["title", "npc"] }
+]

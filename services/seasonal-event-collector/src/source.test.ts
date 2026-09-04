@@ -26,6 +26,7 @@ test("parses the 2026 Rising time window and makes the end exclusive", () => {
 
 test("parses the displayed quest coordinates from an official activity page", () => {
   assert.deepEqual(extractCoordinates("利姆萨·罗敏萨上层甲板 X:11.0 Y:12.8"), { x: 11, y: 12.8 });
+  assert.deepEqual(extractCoordinates("利姆萨罗敏萨上层甲板（X:11，Y:13）"), { x: 11, y: 13 });
 });
 
 test("selects the activity title instead of the generic seasonal-event heading", () => {
@@ -47,6 +48,20 @@ test("extracts the quest NPC from the official activity introduction", () => {
   );
 });
 
+test("extracts NPC names from historical official introduction wording", () => {
+  assert.equal(extractNpc("米·凯特露天剧场的阿姆·加兰基想找冒险者帮忙。"), "阿姆·加兰基");
+  assert.equal(extractNpc("红玉大路国际市场的异国的诗人有事情想拜托冒险者。"), "异国的诗人");
+  assert.equal(extractNpc("米·凯特露天剧场的莉赛特·德·瓦伦提昂有话想对冒险者说。"), "莉赛特·德·瓦伦提昂");
+  assert.equal(extractNpc("活动期间，与NPC戈德里库兰对话，接取节日任务。"), "戈德里库兰");
+  assert.equal(extractNpc("活动期间和以下地点出现的管家之王对话，可以接取节日任务。"), "管家之王");
+  assert.equal(extractNpc("活动期间，以下地点会出现星芒节执行委员长。"), "星芒节执行委员长");
+  assert.equal(extractNpc("米·凯特露天剧场的阿姆·加兰基好像有事情想找人帮忙。"), "阿姆·加兰基");
+  assert.equal(extractNpc("米·凯特露天剧场的阿姆·加兰基好像有事想拜托冒险者。"), "阿姆·加兰基");
+  assert.equal(extractNpc("监视着庆典的冒险者行会的调查员正在等待协助。"), "调查员");
+  assert.equal(extractNpc("舰尾楼的辰监察想请冒险者协助举办降神节。"), "辰监察");
+  assert.equal(extractNpc("乌尔达哈的琪琵·嘉奇亚在寻找能够帮助的人。"), "琪琵·嘉奇亚");
+});
+
 test("rejects a page without a complete time window", () => {
   assert.equal(parseTimeWindow("2026年8月27日15:00"), null);
 });
@@ -55,6 +70,20 @@ test("handles an event whose end date crosses into the next year", () => {
   assert.deepEqual(parseTimeWindow("2026年12月20日15:00 ～ 1月5日22:59"), {
     startAt: "2026-12-20T15:00:00+08:00",
     endAt: "2027-01-05T23:00:00+08:00",
+  });
+});
+
+test("keeps an exact official end boundary without adding a minute", () => {
+  assert.deepEqual(parseTimeWindow("2025年8月14日14:00 ～ 2025年8月29日14:00"), {
+    startAt: "2025-08-14T14:00:00+08:00",
+    endAt: "2025-08-29T14:00:00+08:00",
+  });
+});
+
+test("parses historical start and end boundaries split across lines", () => {
+  assert.deepEqual(parseTimeWindow("活动时间\n2015年3月13日14:00开始\n2015年3月26日14:00结束"), {
+    startAt: "2015-03-13T14:00:00+08:00",
+    endAt: "2015-03-26T14:00:00+08:00",
   });
 });
 
