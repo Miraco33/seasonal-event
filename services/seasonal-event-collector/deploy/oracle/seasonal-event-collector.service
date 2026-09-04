@@ -4,6 +4,7 @@ After=docker.service network-online.target
 Wants=network-online.target
 Requires=docker.service
 ConditionPathExists=/opt/oracle-services/seasonal-event/services/seasonal-event-collector/deploy/oracle/.env
+ConditionPathExists=/home/ubuntu/.ssh/seasonal-event-deploy
 
 [Service]
 Type=oneshot
@@ -11,8 +12,9 @@ User=ubuntu
 Group=ubuntu
 SupplementaryGroups=docker
 WorkingDirectory=/opt/oracle-services/seasonal-event/services/seasonal-event-collector/deploy/oracle
-ExecStart=/usr/bin/docker compose -f compose.yml run --rm --no-deps collector
-TimeoutStartSec=15min
+Environment=DEPLOY_KEY_PATH=/home/ubuntu/.ssh/seasonal-event-deploy
+ExecStart=/opt/oracle-services/seasonal-event/services/seasonal-event-collector/deploy/oracle/run-and-publish.sh
+TimeoutStartSec=20min
 Nice=10
 IOSchedulingClass=best-effort
 IOSchedulingPriority=7

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import type { EventsDocument } from "./models.js";
-import { assertEventCollectionIsPublishable, preparePublication, publish } from "./publisher.js";
+import { assertEventCollectionIsPublishable, hasPublicationChanges, preparePublication, publish } from "./publisher.js";
 
 const environmentKeys = [
   "PUBLISH_MODE",
@@ -59,12 +59,69 @@ async function withEnvironment(
 }
 
 function githubFileResponse(dataVersion: number, sha = "existing-sha"): Response {
+  return githubDocumentResponse({ dataVersion }, sha);
+}
+
+function githubDocumentResponse(document: unknown, sha = "existing-sha"): Response {
   return Response.json({
     sha,
     encoding: "base64",
-    content: Buffer.from(JSON.stringify({ dataVersion }), "utf8").toString("base64"),
+    content: Buffer.from(JSON.stringify(document), "utf8").toString("base64"),
   });
 }
+
+test("publication comparison ignores generated metadata and object key order", () => {
+  const existing = documentWithVersion(12);
+  const event = existing.events[0];
+  const candidate: EventsDocument = {
+    events: [{
+      lastVerifiedAt: "2026-09-04T00:00:00.000Z",
+      sourceUrl: event.sourceUrl,
+      rewards: event.rewards.map(reward => ({
+        flags: reward.flags,
+        description: reward.description,
+        category: reward.category,
+        name: reward.name,
+      })),
+      achievementId: event.achievementId,
+      location: {
+        z: event.location.z,
+        y: event.location.y,
+        x: event.location.x,
+        mapId: event.location.mapId,
+        territoryId: event.location.territoryId,
+      },
+      questNpc: event.questNpc,
+      questLevel: event.questLevel,
+      questName: event.questName,
+      endAt: event.endAt,
+      startAt: event.startAt,
+      title: event.title,
+      id: event.id,
+    }],
+    publishedAt: "2026-09-04T00:00:00.000Z",
+    dataVersion: 13,
+    schemaVersion: 1,
+  };
+
+  assert.equal(hasPublicationChanges(candidate, existing), false);
+});
+
+test("publication comparison detects other values and array ordering changes", () => {
+  const existing = documentWithVersion(12);
+  const secondEvent = { ...existing.events[0], id: "moonfire-faire-2026", title: "红莲节" };
+  existing.events.push(secondEvent);
+
+  const changedValue = structuredClone(existing);
+  changedValue.dataVersion = 13;
+  changedValue.events[0].questNpc = "不同的 NPC";
+  assert.equal(hasPublicationChanges(changedValue, existing), true);
+
+  const reordered = structuredClone(existing);
+  reordered.dataVersion = 13;
+  reordered.events.reverse();
+  assert.equal(hasPublicationChanges(reordered, existing), true);
+});
 
 test("an empty collection requires the exact ALLOW_EMPTY_EVENTS=true opt-in", () => {
   for (const value of [undefined, "", "false", "TRUE", " true"] as const) {
@@ -168,6 +225,30 @@ test("GitHub publication reuses the remote read sha when updating the file", asy
   assert.equal(published.dataVersion, 21);
 });
 
+test("GitHub publication skips PUT when only generated metadata changed", async () => {
+  const calls: Array<{ url: string; init?: RequestInit }> = [];
+  const existing = documentWithVersion(20);
+  const mockFetch: typeof fetch = async (input, init) => {
+    calls.push({ url: String(input), init });
+    return githubDocumentResponse(existing, "sha-from-read");
+  };
+
+  await withEnvironment({
+    PUBLISH_MODE: "github",
+    GITHUB_TOKEN: "test-token",
+    GITHUB_REPOSITORY: "owner/repository",
+  }, async () => {
+    const publication = await preparePublication(mockFetch);
+    const candidate = documentWithVersion(21);
+    candidate.publishedAt = "2026-09-04T00:00:00.000Z";
+    candidate.events[0].lastVerifiedAt = "2026-09-04T00:00:00.000Z";
+    assert.equal(await publish(candidate, false, publication), false);
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].init?.method, undefined);
+});
+
 test("empty collection rejection happens before any filesystem write", async () => {
   const directory = await mkdtemp(join(tmpdir(), "seasonal-event-"));
   const output = join(directory, "events.json");
@@ -196,6 +277,28 @@ test("filesystem publication writes the prepared next version", async () => {
     });
     const written = JSON.parse(await readFile(output, "utf8")) as EventsDocument;
     assert.equal(written.dataVersion, 4);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("filesystem publication leaves the existing file untouched when only generated metadata changed", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "seasonal-event-"));
+  const output = join(directory, "events.json");
+  const existing = documentWithVersion(3);
+  const original = `${JSON.stringify(existing, null, 2)}\n`;
+
+  try {
+    await writeFile(output, original, "utf8");
+    await withEnvironment({ PUBLISH_MODE: "filesystem", OUTPUT_FILE: output }, async () => {
+      const publication = await preparePublication();
+      const candidate = documentWithVersion(4);
+      candidate.publishedAt = "2026-09-04T00:00:00.000Z";
+      candidate.events[0].lastVerifiedAt = "2026-09-04T00:00:00.000Z";
+      assert.equal(await publish(candidate, false, publication), false);
+    });
+    assert.equal(await readFile(output, "utf8"), original);
+    assert.equal(existsSync(`${output}.lock`), false);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

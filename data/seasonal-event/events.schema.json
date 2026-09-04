@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/Miraco33/seasonal-event/main/data/seasonal-event/events.schema.json",
+  "$id": "https://miraco33.github.io/seasonal-event/events.schema.json",
   "type": "object",
   "required": ["schemaVersion", "dataVersion", "publishedAt", "events"],
   "properties": {

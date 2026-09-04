@@ -30,7 +30,7 @@
 
 活动完成状态优先使用稳定的任务 ID 判断，并以成就状态作为补充。游戏尚未发送完整成就列表且数据没有任务 ID 时，插件仍会显示活动和提醒，同时明确标注完成状态暂时未知，避免活动被永久静默。没有稳定任务或成就映射时，用户可以在完成后忽略该活动。
 
-插件默认从本仓库 `main` 分支的公开 HTTPS `events.json` 获取数据。用户可以在 `/seasonalevent` 窗口的“数据源设置”中改用其他兼容地址，再点击“保存并刷新”。从开发版占位地址升级的既有配置会自动迁移到正式地址。
+插件默认从 GitHub Pages 的公开 HTTPS 地址 [`events.json`](https://miraco33.github.io/seasonal-event/events.json) 获取数据。用户可以在 `/seasonalevent` 窗口的“数据源设置”中改用其他兼容地址，再点击“保存并刷新”。从开发版占位地址或 GitHub Raw 地址升级的既有配置会自动迁移到 Pages 地址；用户自行填写的其他数据源保持不变。
 
 ## 时间规则
 
@@ -62,9 +62,11 @@
 
 ### 2. 公共静态数据源
 
-初期不需要复杂数据库或用户 API。可以使用 GitHub Pages、Cloudflare Pages、R2 或类似静态托管发布 `events.json`。
+当前使用 GitHub Pages 发布 [`events.json`](https://miraco33.github.io/seasonal-event/events.json) 和 [`events.schema.json`](https://miraco33.github.io/seasonal-event/events.schema.json)，状态页位于 [`https://miraco33.github.io/seasonal-event/`](https://miraco33.github.io/seasonal-event/)。发布工作流将 `site/` 与 `data/seasonal-event/` 中的两个 JSON 文件组合到 Pages 根目录。
 
 数据源只保存公共活动资料，不保存角色、账号或反馈隐私信息。插件使用 HTTPS、缓存和 ETag，网络失败时继续使用本地缓存。
+
+推送到 `main` 且网页或公共数据发生变化时，`.github/workflows/pages.yml` 会自动部署 Pages；也可以从 GitHub Actions 页面手动触发。仓库需要在 GitHub Pages 设置中选择 **GitHub Actions** 作为发布来源。
 
 ### 3. 活动采集与标准化服务
 

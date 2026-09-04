@@ -32,13 +32,15 @@ Oracle 云服务器使用同一镜像和同一 `.env`，由 cron 或 systemd 定
 - `PUBLISH_MODE=filesystem`：写入 `OUTPUT_FILE`，适合本机、Docker 挂载和 GitHub Actions。
 - `PUBLISH_MODE=github`：使用最小权限 `GITHUB_TOKEN` 调用 GitHub Contents API 更新数据文件。
 
-每次发布都会在现有版本上递增 `dataVersion`。`filesystem` 模式读取 `OUTPUT_FILE`，并用同目录锁文件阻止两个定时或手动任务同时发布；获得锁后还会重新核对版本，目标已被其他任务更新时安全失败。`github` 模式读取目标分支的当前 JSON，并以同一次读取取得的 SHA 做条件更新。目标文件尚不存在时从 `1` 开始。已有文件无法读取、JSON 损坏或缺少有效 `dataVersion` 时任务会失败，不会把版本重置为 `1`。
+采集器只在活动语义发生变化时发布并递增 `dataVersion`。比较时忽略文档级 `dataVersion`、`publishedAt` 和每个活动的 `lastVerifiedAt`；其他字段、字段值和数组顺序都参与比较。内容未变化时日志包含 `changed=false`，不会覆盖文件或调用 GitHub 更新接口，已有版本号和时间戳保持不变。对象属性的书写顺序不影响比较。
+
+`filesystem` 模式读取 `OUTPUT_FILE`，并用同目录锁文件阻止两个定时或手动任务同时发布；获得锁后还会重新核对语义和版本，目标已被其他任务更新时会跳过重复内容或安全失败。`github` 模式读取目标分支的当前 JSON，并以同一次读取取得的 SHA 做条件更新。目标文件尚不存在时从 `1` 开始。已有文件无法读取、JSON 损坏或缺少有效 `dataVersion` 时任务会失败，不会把版本重置为 `1`。
 
 进程正常结束时会清理锁文件。如果宿主机在发布过程中断电或被强制结束，需确认没有采集进程仍在运行，再删除 `OUTPUT_FILE` 同目录下残留的 `.lock` 文件。
 
 采集结果为空时任务默认失败，防止官网 DOM 变化把已有 feed 覆盖为空。只有确认空 feed 是预期结果时，才可显式设置 `ALLOW_EMPTY_EVENTS=true`；其他值（包括 `false` 和 `TRUE`）都不会解除保护。
 
-`--dry-run` 仍会抓取、执行空列表保护和校验，并读取当前版本，但不会写入临时文件、挂载目录或向 GitHub 发送更新请求。生产定时任务应先在日志中确认 `eventCount` 与预期一致。
+`--dry-run` 仍会抓取、执行空列表保护和校验、读取当前版本并计算 `changed`，但不会写入临时文件、挂载目录或向 GitHub 发送更新请求。生产定时任务应先在日志中确认 `eventCount` 与预期一致。
 
 采集和校验失败时进程返回非零状态，不覆盖已有输出。`github` 模式只在校验通过后提交。
 

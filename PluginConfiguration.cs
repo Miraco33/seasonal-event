@@ -6,7 +6,8 @@ namespace SeasonalEvent;
 public sealed class PluginConfiguration : IPluginConfiguration
 {
     private const string LegacyPlaceholderEventsUrl = "https://example.invalid/seasonal-event/events.json";
-    public const string DefaultEventsUrl = "https://raw.githubusercontent.com/Miraco33/seasonal-event/main/data/seasonal-event/events.json";
+    private const string LegacyRawEventsUrl = "https://raw.githubusercontent.com/Miraco33/seasonal-event/main/data/seasonal-event/events.json";
+    public const string DefaultEventsUrl = "https://miraco33.github.io/seasonal-event/events.json";
 
     public int Version { get; set; } = 1;
     public string EventsUrl { get; set; } = DefaultEventsUrl;
@@ -19,7 +20,8 @@ public sealed class PluginConfiguration : IPluginConfiguration
     {
         pluginInterface = value;
         if (string.IsNullOrWhiteSpace(EventsUrl) ||
-            string.Equals(EventsUrl, LegacyPlaceholderEventsUrl, StringComparison.OrdinalIgnoreCase))
+            string.Equals(EventsUrl, LegacyPlaceholderEventsUrl, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(EventsUrl, LegacyRawEventsUrl, StringComparison.OrdinalIgnoreCase))
             EventsUrl = DefaultEventsUrl;
         Characters ??= new Dictionary<string, CharacterState>(StringComparer.Ordinal);
     }

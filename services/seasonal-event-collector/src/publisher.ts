@@ -27,6 +27,7 @@ interface ExistingPublication {
 export interface PublicationPreparation {
   dataVersion: number;
   configuration: PublishConfiguration;
+  existingDocument?: unknown;
   existingSha?: string;
   fetchImpl: Fetch;
 }
@@ -44,6 +45,7 @@ export async function preparePublication(fetchImpl: Fetch = globalThis.fetch): P
   return {
     dataVersion: nextDataVersion(existing?.document),
     configuration,
+    existingDocument: existing?.document,
     existingSha: existing?.sha,
     fetchImpl,
   };
@@ -53,26 +55,32 @@ export async function publish(
   document: EventsDocument,
   dryRun: boolean,
   prepared?: PublicationPreparation,
-): Promise<void> {
+): Promise<boolean> {
   assertEventCollectionIsPublishable(document.events.length, process.env.ALLOW_EMPTY_EVENTS);
   const publication = prepared ?? await preparePublication();
   if (document.dataVersion !== publication.dataVersion) {
     throw new Error(`dataVersion ${document.dataVersion} does not match the next published version ${publication.dataVersion}`);
   }
-  if (dryRun) return;
+  if (!hasPublicationChanges(document, publication.existingDocument)) return false;
+  if (dryRun) return true;
 
   if (publication.configuration.mode === "filesystem") {
-    await publishToFilesystem(document, publication);
-    return;
+    return publishToFilesystem(document, publication);
   }
 
   await publishToGitHub(document, publication);
+  return true;
+}
+
+export function hasPublicationChanges(document: EventsDocument, existingDocument: unknown): boolean {
+  if (existingDocument === undefined) return true;
+  return JSON.stringify(publicationSemantics(document)) !== JSON.stringify(publicationSemantics(existingDocument));
 }
 
 async function publishToFilesystem(
   document: EventsDocument,
   publication: PublicationPreparation,
-): Promise<void> {
+): Promise<boolean> {
   const configuration = publication.configuration;
   if (configuration.mode !== "filesystem") throw new Error("filesystem publication requires filesystem configuration");
 
@@ -92,6 +100,7 @@ async function publishToFilesystem(
   try {
     await lockHandle.writeFile(JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() }), "utf8");
     const existing = await readExistingPublication(configuration, publication.fetchImpl);
+    if (!hasPublicationChanges(document, existing?.document)) return false;
     const lockedDataVersion = nextDataVersion(existing?.document);
     if (document.dataVersion !== lockedDataVersion) {
       throw new Error(`publication changed before write; expected dataVersion ${lockedDataVersion}`);
@@ -99,6 +108,7 @@ async function publishToFilesystem(
 
     await writeFile(temporaryPath, serializeDocument(document), "utf8");
     await rename(temporaryPath, output);
+    return true;
   } finally {
     try {
       await rm(temporaryPath, { force: true });
@@ -110,6 +120,50 @@ async function publishToFilesystem(
       }
     }
   }
+}
+
+function publicationSemantics(document: unknown): unknown {
+  if (!isRecord(document)) return canonicalize(document);
+
+  const result: Record<string, unknown> = {};
+  for (const key of Object.keys(document).sort()) {
+    if (key === "dataVersion" || key === "publishedAt") continue;
+    const value = document[key];
+    if (key === "events" && Array.isArray(value)) {
+      result[key] = value.map(event => canonicalizeEvent(event));
+    } else if (value !== undefined) {
+      result[key] = canonicalize(value);
+    }
+  }
+  return result;
+}
+
+function canonicalizeEvent(event: unknown): unknown {
+  if (!isRecord(event)) return canonicalize(event);
+
+  const result: Record<string, unknown> = {};
+  for (const key of Object.keys(event).sort()) {
+    if (key === "lastVerifiedAt") continue;
+    const value = event[key];
+    if (value !== undefined) result[key] = canonicalize(value);
+  }
+  return result;
+}
+
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(item => canonicalize(item));
+  if (!isRecord(value)) return value;
+
+  const result: Record<string, unknown> = {};
+  for (const key of Object.keys(value).sort()) {
+    const child = value[key];
+    if (child !== undefined) result[key] = canonicalize(child);
+  }
+  return result;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function getPublishConfiguration(): PublishConfiguration {

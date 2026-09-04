@@ -6,10 +6,18 @@ services:
       context: ../..
       dockerfile: Dockerfile
     image: seasonal-event-collector:oracle-arm64
+    user: "${COLLECTOR_UID:?set COLLECTOR_UID in .env}:${COLLECTOR_GID:?set COLLECTOR_GID in .env}"
     env_file:
       - .env
     environment:
+      HOME: /tmp
+      OUTPUT_FILE: /app/output/events.json
+      PUBLISH_MODE: filesystem
       TZ: Asia/Shanghai
+    volumes:
+      - type: bind
+        source: ${COLLECTOR_OUTPUT_DIR:-./output}
+        target: /app/output
     init: true
     restart: "no"
     logging:

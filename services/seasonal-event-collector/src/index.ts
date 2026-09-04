@@ -17,8 +17,8 @@ async function main(): Promise<void> {
     events,
   };
   validateDocument(document);
-  await publish(document, dryRun, publication);
-  console.log(JSON.stringify({ eventCount: events.length, dryRun, publishMode: process.env.PUBLISH_MODE || "filesystem" }));
+  const changed = await publish(document, dryRun, publication);
+  console.log(JSON.stringify({ eventCount: events.length, changed, dryRun, publishMode: process.env.PUBLISH_MODE || "filesystem" }));
 }
 
 main().catch(error => {

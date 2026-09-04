@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="国服 Final Fantasy XIV 季节活动公开数据状态。">
+  <title>FFXIV 国服季节活动</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #657084;
+      --paper: #fffdf8;
+      --line: #e8e1d4;
+      --accent: #9d482c;
+      --accent-soft: #f6e5db;
+      --ok: #287351;
+      --ok-soft: #e2f2e9;
+      --warn: #985e13;
+      --warn-soft: #fff0ce;
+      --shadow: 0 18px 45px rgb(65 44 25 / 10%);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 0%, rgb(217 154 107 / 22%), transparent 34rem),
+        linear-gradient(180deg, #f8f2e9 0, #f4efe7 100%);
+      font-family: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    main {
+      width: min(960px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 64px 0 48px;
+    }
+
+    header { margin-bottom: 28px; }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Georgia, "Noto Serif SC", serif;
+      font-size: clamp(2.2rem, 7vw, 4.3rem);
+      font-weight: 600;
+      line-height: 1.03;
+      letter-spacing: -0.035em;
+    }
+
+    .intro {
+      max-width: 650px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .status-panel,
+    .event-card,
+    .message {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgb(255 253 248 / 88%);
+      box-shadow: var(--shadow);
+    }
+
+    .status-panel {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+      margin-bottom: 36px;
+      background: var(--line);
+    }
+
+    .metric {
+      min-height: 106px;
+      padding: 20px;
+      background: var(--paper);
+    }
+
+    .metric-label {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .metric-value {
+      display: block;
+      font-size: 1.15rem;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
+    .state {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 11px;
+      background: var(--warn-soft);
+      color: var(--warn);
+      font-size: 0.86rem;
+      font-weight: 750;
+    }
+
+    .state::before {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .state.ok {
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.35rem;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .events {
+      display: grid;
+      gap: 16px;
+    }
+
+    .event-card { padding: 24px; }
+
+    .event-top {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .event-card h3 {
+      margin: 0 0 8px;
+      font-size: 1.22rem;
+    }
+
+    .time {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .tag {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 5px 10px;
+      color: var(--ok);
+      background: var(--ok-soft);
+      font-size: 0.75rem;
+      font-weight: 750;
+    }
+
+    .details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      margin: 18px 0 0;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: #3d4656;
+      font-size: 0.9rem;
+    }
+
+    .details span { min-width: 180px; }
+
+    .source {
+      display: inline-block;
+      margin-top: 16px;
+      color: var(--accent);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .message {
+      padding: 28px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 20px;
+      margin-top: 34px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    footer a { color: var(--accent); }
+
+    @media (max-width: 720px) {
+      main { padding-top: 38px; }
+      .status-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .event-top { display: block; }
+      .tag { display: inline-block; margin-top: 12px; }
+    }
+
+    @media (max-width: 430px) {
+      .status-panel { grid-template-columns: 1fr; }
+      .metric { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Seasonal Event Data</p>
+      <h1>FFXIV 国服季节活动</h1>
+      <p class="intro">这里展示 Seasonal Event 插件使用的公开活动数据。页面时间统一按北京时间显示，角色与账号状态不会上传。</p>
+    </header>
+
+    <section class="status-panel" aria-label="数据状态">
+      <div class="metric">
+        <span class="metric-label">读取状态</span>
+        <span id="state" class="state">正在读取</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">当前活动</span>
+        <span id="active-count" class="metric-value">—</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">数据版本</span>
+        <span id="version" class="metric-value">—</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">发布时间</span>
+        <span id="published" class="metric-value">—</span>
+      </div>
+    </section>
+
+    <section aria-labelledby="current-heading">
+      <div class="section-head">
+        <h2 id="current-heading">正在进行</h2>
+        <span id="total-count" class="count"></span>
+      </div>
+      <div id="events" class="events" aria-live="polite">
+        <div class="message">正在读取活动数据……</div>
+      </div>
+    </section>
+
+    <footer>
+      <span>数据仅供插件提醒使用</span>
+      <a href="./events.json">查看 events.json</a>
+      <a href="./events.schema.json">查看 JSON Schema</a>
+      <a href="https://github.com/Miraco33/seasonal-event">GitHub 仓库</a>
+    </footer>
+  </main>
+
+  <script>
+    const chinaDateTime = new Intl.DateTimeFormat("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    });
+
+    function formatDate(value) {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? "时间未知" : chinaDateTime.format(date);
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = value;
+    }
+
+    function safeSourceUrl(value) {
+      try {
+        const url = new URL(value);
+        return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function createEventCard(event) {
+      const card = document.createElement("article");
+      card.className = "event-card";
+
+      const top = document.createElement("div");
+      top.className = "event-top";
+      const heading = document.createElement("div");
+      const title = document.createElement("h3");
+      title.textContent = event.title || "未命名活动";
+      const time = document.createElement("p");
+      time.className = "time";
+      time.textContent = `${formatDate(event.startAt)} 至 ${formatDate(event.endAt)}（北京时间）`;
+      heading.append(title, time);
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = "进行中";
+      top.append(heading, tag);
+      card.append(top);
+
+      const details = document.createElement("div");
+      details.className = "details";
+      const quest = document.createElement("span");
+      quest.textContent = `任务：${event.questName || "待确认"}`;
+      const npc = document.createElement("span");
+      npc.textContent = `接取 NPC：${event.questNpc || "待确认"}`;
+      const rewards = document.createElement("span");
+      rewards.textContent = `奖励：${Array.isArray(event.rewards) ? event.rewards.length : 0} 项`;
+      details.append(quest, npc, rewards);
+      card.append(details);
+
+      const sourceUrl = safeSourceUrl(event.sourceUrl);
+      if (sourceUrl) {
+        const source = document.createElement("a");
+        source.className = "source";
+        source.href = sourceUrl;
+        source.target = "_blank";
+        source.rel = "noopener noreferrer";
+        source.textContent = "查看官方活动页面";
+        card.append(source);
+      }
+
+      return card;
+    }
+
+    async function loadEvents() {
+      const state = document.getElementById("state");
+      const container = document.getElementById("events");
+
+      try {
+        const response = await fetch("./events.json", { cache: "no-cache" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (data.schemaVersion !== 1 || !Array.isArray(data.events)) {
+          throw new Error("不支持的数据格式");
+        }
+
+        const now = Date.now();
+        const active = data.events
+          .filter((event) => {
+            const start = Date.parse(event.startAt);
+            const end = Date.parse(event.endAt);
+            return Number.isFinite(start) && Number.isFinite(end) && start <= now && now < end;
+          })
+          .sort((a, b) => Date.parse(a.endAt) - Date.parse(b.endAt));
+
+        state.textContent = "数据正常";
+        state.classList.add("ok");
+        setText("active-count", `${active.length} 个`);
+        setText("version", `v${data.dataVersion} / schema ${data.schemaVersion}`);
+        setText("published", formatDate(data.publishedAt));
+        setText("total-count", `共收录 ${data.events.length} 个活动`);
+
+        container.replaceChildren();
+        if (active.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "message";
+          empty.textContent = "当前没有正在进行的季节活动。数据服务运行正常。";
+          container.append(empty);
+          return;
+        }
+
+        for (const event of active) container.append(createEventCard(event));
+      } catch (error) {
+        state.textContent = "读取失败";
+        state.classList.remove("ok");
+        setText("active-count", "—");
+        container.replaceChildren();
+        const message = document.createElement("div");
+        message.className = "message";
+        message.textContent = `暂时无法读取活动数据：${error instanceof Error ? error.message : "未知错误"}`;
+        container.append(message);
+      }
+    }
+
+    loadEvents();
+  </script>
+</body>
+</html>
