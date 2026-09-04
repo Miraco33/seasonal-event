@@ -1,0 +1,12 @@
+[Unit]
+Description=Run the FFXIV seasonal-event collector every six hours
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:20:00 UTC
+RandomizedDelaySec=10m
+Persistent=true
+AccuracySec=1m
+Unit=seasonal-event-collector.service
+
+[Install]
+WantedBy=timers.target

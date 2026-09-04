@@ -1,0 +1,20 @@
+[Unit]
+Description=Collect and publish FFXIV seasonal-event data
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+ConditionPathExists=/opt/oracle-services/seasonal-event/services/seasonal-event-collector/deploy/oracle/.env
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+SupplementaryGroups=docker
+WorkingDirectory=/opt/oracle-services/seasonal-event/services/seasonal-event-collector/deploy/oracle
+ExecStart=/usr/bin/docker compose -f compose.yml run --rm --no-deps collector
+TimeoutStartSec=15min
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+UMask=0077
+NoNewPrivileges=true

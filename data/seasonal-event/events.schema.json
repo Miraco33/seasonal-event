@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/seasonal-event/events.schema.json",
+  "type": "object",
+  "required": ["schemaVersion", "dataVersion", "publishedAt", "events"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "dataVersion": { "type": "integer", "minimum": 1 },
+    "publishedAt": { "type": "string", "format": "date-time" },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/event" }
+    }
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "required": ["id", "title", "startAt", "endAt", "questName", "questNpc", "location", "rewards", "sourceUrl", "lastVerifiedAt"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "startAt": { "type": "string", "format": "date-time" },
+        "endAt": { "type": "string", "format": "date-time" },
+        "questName": { "type": "string", "minLength": 1 },
+        "questLevel": { "type": ["integer", "null"], "minimum": 1 },
+        "questNpc": { "type": "string", "minLength": 1 },
+        "questId": { "type": ["integer", "null"], "minimum": 1 },
+        "location": {
+          "type": "object",
+          "required": ["territoryId", "mapId", "x", "y", "z"],
+          "properties": {
+            "territoryId": { "type": "integer", "minimum": 1 },
+            "mapId": { "type": "integer", "minimum": 1 },
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "z": { "type": "number" },
+            "displayX": { "type": ["number", "null"] },
+            "displayY": { "type": ["number", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "achievementId": { "type": ["integer", "null"], "minimum": 1 },
+        "teleport": {
+          "type": ["object", "null"],
+          "required": ["aetheryteId", "subIndex"],
+          "properties": {
+            "aetheryteId": { "type": "integer", "minimum": 1 },
+            "subIndex": { "type": "integer", "minimum": 0, "maximum": 255 }
+          },
+          "additionalProperties": false
+        },
+        "rewards": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "category", "description", "flags"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "category": { "type": "string" },
+              "description": { "type": "string" },
+              "flags": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": false
+          }
+        },
+        "sourceUrl": { "type": "string", "format": "uri" },
+        "lastVerifiedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

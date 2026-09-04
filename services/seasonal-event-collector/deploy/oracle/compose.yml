@@ -1,0 +1,19 @@
+name: seasonal-event-collector
+
+services:
+  collector:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: seasonal-event-collector:oracle-arm64
+    env_file:
+      - .env
+    environment:
+      TZ: Asia/Shanghai
+    init: true
+    restart: "no"
+    logging:
+      driver: local
+      options:
+        max-size: "20m"
+        max-file: "3"

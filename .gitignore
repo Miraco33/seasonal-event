@@ -1,0 +1,63 @@
+# Workspace-local SDK
+/.dotnet/
+
+# .NET build outputs
+**/bin/
+**/obj/
+.vs/
+TestResults/
+*.trx
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Node and TypeScript build outputs
+**/node_modules/
+/services/seasonal-event-collector/dist/
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+secrets/
+credentials/
+docker-compose.override.yml
+compose.override.yml
+
+# Collector runtime files
+/services/seasonal-event-collector/output/
+*.json.lock
+*.json.*.tmp
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.pid
+
+# Editor, operating-system, and temporary files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+*.bak
+*.orig
+*~
+
+/services/seasonal-event-collector/deploy/oracle/output/

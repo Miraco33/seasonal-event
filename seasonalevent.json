@@ -1,0 +1,15 @@
+{
+  "Author": "Shuyuxu211",
+  "Name": "Seasonal Event",
+  "InternalName": "seasonalevent",
+  "AssemblyVersion": "0.1.0.0",
+  "Description": "国服游戏内季节活动提醒与任务地图标记（开发中）",
+  "ApplicableVersion": "any",
+  "DalamudApiLevel": 15,
+  "LoadRequiredState": 0,
+  "LoadSync": false,
+  "CanUnloadAsync": true,
+  "LoadPriority": 0,
+  "Punchline": "提醒尚未完成的国服季节活动",
+  "AcceptsFeedback": true
+}
