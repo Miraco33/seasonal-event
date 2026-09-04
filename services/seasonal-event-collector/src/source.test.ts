@@ -60,6 +60,8 @@ test("extracts NPC names from historical official introduction wording", () => {
   assert.equal(extractNpc("监视着庆典的冒险者行会的调查员正在等待协助。"), "调查员");
   assert.equal(extractNpc("舰尾楼的辰监察想请冒险者协助举办降神节。"), "辰监察");
   assert.equal(extractNpc("乌尔达哈的琪琵·嘉奇亚在寻找能够帮助的人。"), "琪琵·嘉奇亚");
+  assert.equal(extractNpc("旧格里达尼亚的南瓜头女人有活动想要介绍给冒险者。"), "南瓜头女人");
+  assert.equal(extractNpc("太阳海岸的红莲节执行委员玛雅尔·莫雅尔想请冒险者帮忙。"), "玛雅尔·莫雅尔");
 });
 
 test("rejects a page without a complete time window", () => {

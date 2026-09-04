@@ -1,8 +1,12 @@
 import { chromium, type Page } from "playwright";
-import { createHash } from "node:crypto";
+import { loadCollectorConfiguration, type CollectorOverrides } from "./configuration.js";
 import type { EventReward, SeasonalEvent, TeleportTarget } from "./models.js";
+import { navigateWithRetry, type NetworkOptions } from "./network.js";
 
-export async function collectEvents(sourceUrls: string[]): Promise<SeasonalEvent[]> {
+export async function collectEvents(
+  sourceUrls: string[],
+  options: NetworkOptions & { overrides?: CollectorOverrides; eventIds?: Record<string, string> } = {},
+): Promise<SeasonalEvent[]> {
   if (sourceUrls.length === 0) {
     throw new Error("SOURCE_URLS must list the verified seasonal-event detail pages");
   }
@@ -15,7 +19,7 @@ export async function collectEvents(sourceUrls: string[]): Promise<SeasonalEvent
     const page = await browser.newPage({ locale: "zh-CN", timezoneId: "Asia/Shanghai" });
     const events: SeasonalEvent[] = [];
     for (const url of sourceUrls) {
-      events.push(await parseDetailPage(page, url));
+      events.push(await parseDetailPage(page, url, options));
     }
     return events;
   } finally {
@@ -23,8 +27,12 @@ export async function collectEvents(sourceUrls: string[]): Promise<SeasonalEvent
   }
 }
 
-async function parseDetailPage(page: Page, url: string): Promise<SeasonalEvent> {
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+async function parseDetailPage(
+  page: Page,
+  url: string,
+  options: NetworkOptions & { overrides?: CollectorOverrides; eventIds?: Record<string, string> },
+): Promise<SeasonalEvent> {
+  await navigateWithRetry(page, url, options);
   await page.waitForTimeout(1000);
   const body = await page.locator("body").innerText();
 
@@ -36,10 +44,14 @@ async function parseDetailPage(page: Page, url: string): Promise<SeasonalEvent> 
   if (!window || !title || !questName || !questNpc) {
     throw new Error(`unable to parse required fields: ${url}`);
   }
-  const id = slugify(`${title}-${window.startAt.slice(0, 4)}`);
-  const location = resolveLocation(id, coordinates);
-  const completion = resolveCompletion(id);
-  const rewards = resolveRewards(id, await extractRewards(page));
+  const configuration = options.overrides && options.eventIds ? undefined : loadCollectorConfiguration();
+  const eventIds = options.eventIds ?? configuration?.eventIds ?? {};
+  const id = eventIds[new URL(url).href];
+  if (!id) throw new Error(`missing stable event id mapping for source: ${url}`);
+  const overrides = options.overrides ?? configuration?.overrides ?? loadCollectorConfiguration().overrides;
+  const location = resolveLocation(id, coordinates, overrides);
+  const completion = resolveCompletion(id, overrides);
+  const rewards = resolveRewards(id, await extractRewards(page), overrides);
 
   return {
     id,
@@ -86,49 +98,39 @@ export function extractCoordinates(text: string): { x: number; y: number } | nul
   return match ? { x: Number(match[1]), y: Number(match[2]) } : null;
 }
 
-export function resolveLocation(id: string, coordinates: { x: number; y: number } | null) {
-  const overrides = JSON.parse(process.env.LOCATION_OVERRIDES || "{}") as Record<string, {
-    territoryId: number;
-    mapId: number;
-    x: number;
-    y: number;
-    z: number;
-    displayX?: number;
-    displayY?: number;
-  }>;
-  const override = overrides[id];
+export function resolveLocation(
+  id: string,
+  coordinates: { x: number; y: number } | null,
+  overrides = loadCollectorConfiguration().overrides,
+) {
+  const override = overrides.locations[id];
   if (!override) throw new Error(`missing LOCATION_OVERRIDES entry for event: ${id}`);
   return coordinates
     ? { ...override, displayX: coordinates.x, displayY: coordinates.y }
     : override;
 }
 
-export function resolveRewards(id: string, extracted: EventReward[]): EventReward[] {
-  const overrides = readOverrideMap("REWARD_OVERRIDES");
-  const value = overrides[id];
+export function resolveRewards(
+  id: string,
+  extracted: EventReward[],
+  overrides = loadCollectorConfiguration().overrides,
+): EventReward[] {
+  const value = overrides.rewards[id];
   if (value === undefined) return extracted;
   if (!Array.isArray(value)) throw new Error(`invalid REWARD_OVERRIDES entry for event: ${id}`);
   return value as EventReward[];
 }
 
-export function resolveCompletion(id: string): {
+export function resolveCompletion(id: string, overrides = loadCollectorConfiguration().overrides): {
   questId?: number | null;
   achievementId?: number | null;
   teleport?: TeleportTarget | null;
 } {
-  const overrides = readOverrideMap("COMPLETION_OVERRIDES");
-  const value = overrides[id];
+  const value = overrides.completion[id];
   if (value === undefined) return {};
   if (!value || Array.isArray(value) || typeof value !== "object")
     throw new Error(`invalid COMPLETION_OVERRIDES entry for event: ${id}`);
   return value as { questId?: number | null; achievementId?: number | null; teleport?: TeleportTarget | null };
-}
-
-function readOverrideMap(name: string): Record<string, unknown> {
-  const parsed: unknown = JSON.parse(process.env[name] || "{}");
-  if (!parsed || Array.isArray(parsed) || typeof parsed !== "object")
-    throw new Error(`${name} must be a JSON object keyed by event id`);
-  return parsed as Record<string, unknown>;
 }
 
 async function extractRewards(page: Page): Promise<EventReward[]> {
@@ -203,6 +205,8 @@ export function extractNpc(text: string): string | null {
 function cleanNpcName(value: string): string {
   return value.trim()
     .replace(/^冒险者行会的/, "")
+    .replace(/^红莲节执行委员(?=.{2,24}[·・].{2,24}$)/, "")
+    .replace(/有活动$/, "")
     .replace(/好像$/, "");
 }
 
@@ -220,10 +224,6 @@ export function selectEventTitle(values: string[]): string | null {
 
 function extractLine(text: string, hints: string[]): string | null {
   return text.split(/\r?\n/).map(line => line.trim()).find(line => hints.some(hint => line.includes(hint))) || null;
-}
-
-function slugify(value: string): string {
-  return `seasonal-${createHash("sha256").update(value).digest("hex").slice(0, 12)}`;
 }
 
 function pad(value: string): string { return value.padStart(2, "0"); }

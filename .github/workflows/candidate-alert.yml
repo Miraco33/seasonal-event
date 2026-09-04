@@ -1,0 +1,105 @@
+name: Seasonal event attention
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - data/seasonal-event/candidates.json
+      - .github/workflows/candidate-alert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: seasonal-event-attention
+  cancel-in-progress: false
+
+jobs:
+  update-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Open, update, or close the attention issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs");
+            const marker = "<!-- seasonal-event-collector-attention -->";
+            const report = JSON.parse(fs.readFileSync("data/seasonal-event/candidates.json", "utf8"));
+            const candidates = Array.isArray(report.candidates) ? report.candidates : [];
+            const needsAttention = report.status === "alert" || report.status === "review_required";
+            const { owner, repo } = context.repo;
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: "all",
+              per_page: 100,
+            });
+            const existing = issues.find((issue) => !issue.pull_request && issue.body?.includes(marker));
+
+            if (!needsAttention) {
+              if (existing?.state === "open") {
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  state: "closed",
+                  state_reason: "completed",
+                });
+              }
+              return;
+            }
+
+            const reasonByCode = {
+              candidate_review_required: "发现了新的官方季节活动专题，需要审核并补齐发布数据。",
+              event_ending_without_candidate: "当前活动即将结束，但尚未发现或批准下一场活动。",
+              no_active_event_without_candidate: "当前没有开放活动，也没有待审核的下一活动。",
+              candidate_discovery_failed: "官方活动公告检查失败，需要查看东京服务器上的最近运行状态。",
+            };
+            const gapNames = {
+              detail_fields_not_inspected: "核对标题、时间、任务与 NPC",
+              stable_event_id: "分配稳定活动 ID",
+              location_override: "补充任务接取位置",
+              reward_override: "补充奖励资料",
+              completion_override: "核实任务、成就与传送 ID",
+            };
+            const lines = [
+              marker,
+              reasonByCode[report.code] || `采集器报告需要处理：${String(report.code || "unknown")}`,
+              "",
+              `状态：\`${String(report.status || "unknown")}\`  原因：\`${String(report.code || "unknown")}\``,
+            ];
+            if (candidates.length > 0) {
+              lines.push("", "待审核专题：");
+              for (const candidate of candidates) {
+                const title = String(candidate.title || "未命名活动").replace(/[\[\]\r\n]/g, " ").trim();
+                const url = String(candidate.url || "");
+                const gaps = Array.isArray(candidate.reviewGaps)
+                  ? candidate.reviewGaps.map((gap) => gapNames[gap] || String(gap)).join("、")
+                  : "核对活动资料";
+                lines.push(`- **${title || "未命名活动"}**：<${url}>`, `  - 待处理：${gaps}`);
+              }
+            }
+            lines.push("", "处理步骤见 `services/seasonal-event-collector/README.md` 的“下一活动审核流程”。");
+            const body = lines.join("\n");
+            const title = "Seasonal Event：活动采集需要处理";
+
+            if (existing) {
+              if (existing.state !== "open" || existing.title !== title || existing.body !== body) {
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  title,
+                  body,
+                  state: "open",
+                });
+              }
+            } else {
+              await github.rest.issues.create({ owner, repo, title, body });
+            }

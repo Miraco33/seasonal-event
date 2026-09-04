@@ -10,14 +10,24 @@ services:
     env_file:
       - .env
     environment:
+      COLLECTOR_CONFIG_FILE: /app/config/collector.json
+      CANDIDATE_OUTPUT_FILE: /app/output/candidates.json
       HOME: /tmp
       OUTPUT_FILE: /app/output/events.json
       PUBLISH_MODE: filesystem
+      STATUS_OUTPUT_FILE: /app/status/latest.json
       TZ: Asia/Shanghai
     volumes:
       - type: bind
+        source: ../../config
+        target: /app/config
+        read_only: true
+      - type: bind
         source: ${COLLECTOR_OUTPUT_DIR:-./output}
         target: /app/output
+      - type: bind
+        source: ${COLLECTOR_STATUS_DIR:-./status}
+        target: /app/status
     init: true
     restart: "no"
     logging:

@@ -61,3 +61,4 @@ Thumbs.db
 *~
 
 /services/seasonal-event-collector/deploy/oracle/output/
+/services/seasonal-event-collector/deploy/oracle/status/

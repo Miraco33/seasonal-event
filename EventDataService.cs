@@ -25,7 +25,12 @@ public sealed class EventDataService : IDisposable
 
     public EventsDocument? Cached { get; private set; }
     public DateTimeOffset? LastAttemptAt { get; private set; }
+    public DateTimeOffset? LastSuccessAt { get; private set; }
+    public DateTimeOffset? LastFailureAt { get; private set; }
+    public DateTimeOffset? LastCacheWriteAt { get; private set; }
     public string? LastError { get; private set; }
+    public string? LastFailureMessage { get; private set; }
+    public bool CacheLoadedFromDisk { get; private set; }
 
     public void LoadCache(string expectedSourceUrl)
     {
@@ -50,6 +55,8 @@ public sealed class EventDataService : IDisposable
                 Cached = envelope.Document;
                 cachedSourceUrl = envelope.SourceUrl;
                 etag = envelope.ETag;
+                CacheLoadedFromDisk = true;
+                LastCacheWriteAt = File.GetLastWriteTimeUtc(cachePath);
                 return;
             }
 
@@ -61,11 +68,13 @@ public sealed class EventDataService : IDisposable
         catch (Exception ex)
         {
             LastError = $"本地活动缓存无效：{ex.Message}";
+            LastFailureMessage = LastError;
+            LastFailureAt = DateTimeOffset.UtcNow;
             log.Error(ex, "Failed to load seasonal event cache");
         }
     }
 
-    public async Task RefreshAsync(string url, CancellationToken cancellationToken)
+    public async Task<bool> RefreshAsync(string url, CancellationToken cancellationToken)
     {
         LastAttemptAt = DateTimeOffset.UtcNow;
         LastError = null;
@@ -83,6 +92,8 @@ public sealed class EventDataService : IDisposable
                     Cached = null;
                     cachedSourceUrl = null;
                     etag = null;
+                    CacheLoadedFromDisk = false;
+                    LastCacheWriteAt = null;
                 }
 
                 using var request = new HttpRequestMessage(HttpMethod.Get, sourceUrl);
@@ -94,7 +105,8 @@ public sealed class EventDataService : IDisposable
                 if (response.StatusCode == HttpStatusCode.NotModified)
                 {
                     if (Cached == null) throw new InvalidDataException("数据源返回 304，但本地缓存不存在");
-                    return;
+                    LastSuccessAt = DateTimeOffset.UtcNow;
+                    return true;
                 }
                 response.EnsureSuccessStatusCode();
 
@@ -128,6 +140,10 @@ public sealed class EventDataService : IDisposable
                 Cached = document;
                 cachedSourceUrl = sourceUrl;
                 etag = responseEtag;
+                CacheLoadedFromDisk = false;
+                LastCacheWriteAt = DateTimeOffset.UtcNow;
+                LastSuccessAt = DateTimeOffset.UtcNow;
+                return true;
             }
             finally
             {
@@ -145,7 +161,10 @@ public sealed class EventDataService : IDisposable
         catch (Exception ex)
         {
             LastError = $"活动数据暂不可用：{ex.Message}";
+            LastFailureMessage = LastError;
+            LastFailureAt = DateTimeOffset.UtcNow;
             log.Error(ex, "Failed to refresh seasonal event data");
+            return false;
         }
     }
 

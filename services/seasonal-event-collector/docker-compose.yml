@@ -3,6 +3,11 @@ services:
     build: .
     env_file:
       - .env
+    environment:
+      COLLECTOR_CONFIG_FILE: /app/config/collector.json
+      CANDIDATE_OUTPUT_FILE: /app/output/candidates.json
+      STATUS_OUTPUT_FILE: /app/output/status.json
     volumes:
+      - ./config:/app/config:ro
       - ./output:/app/output
     working_dir: /app

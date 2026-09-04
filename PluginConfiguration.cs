@@ -16,14 +16,24 @@ public sealed class PluginConfiguration : IPluginConfiguration
     [NonSerialized]
     private IDalamudPluginInterface? pluginInterface;
 
-    public void Initialize(IDalamudPluginInterface value)
+    public bool Initialize(IDalamudPluginInterface value)
     {
         pluginInterface = value;
+        var changed = false;
         if (string.IsNullOrWhiteSpace(EventsUrl) ||
             string.Equals(EventsUrl, LegacyPlaceholderEventsUrl, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(EventsUrl, LegacyRawEventsUrl, StringComparison.OrdinalIgnoreCase))
+        {
             EventsUrl = DefaultEventsUrl;
-        Characters ??= new Dictionary<string, CharacterState>(StringComparer.Ordinal);
+            changed = true;
+        }
+        if (Characters == null)
+        {
+            Characters = new Dictionary<string, CharacterState>(StringComparer.Ordinal);
+            changed = true;
+        }
+
+        return changed;
     }
 
     public void Save() => pluginInterface?.SavePluginConfig(this);

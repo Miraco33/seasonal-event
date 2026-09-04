@@ -426,7 +426,7 @@
           })
           .sort((a, b) => Date.parse(a.endAt) - Date.parse(b.endAt));
 
-        state.textContent = "数据正常";
+        state.textContent = "数据可读取";
         state.classList.add("ok");
         setText("active-count", `${active.length} 个`);
         setText("version", `v${data.dataVersion} / schema ${data.schemaVersion}`);
@@ -437,7 +437,7 @@
         if (active.length === 0) {
           const empty = document.createElement("div");
           empty.className = "message";
-          empty.textContent = "当前没有正在进行的季节活动。数据服务运行正常。";
+          empty.textContent = "当前没有正在进行的季节活动。";
           container.append(empty);
           return;
         }
