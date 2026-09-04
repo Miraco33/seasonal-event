@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/pages.yml
       - site/**
+      - repo.json
       - data/seasonal-event/events.json
       - data/seasonal-event/events.schema.json
   workflow_dispatch:
@@ -40,6 +41,7 @@ jobs:
           cp -R site/. _site/
           cp data/seasonal-event/events.json _site/events.json
           cp data/seasonal-event/events.schema.json _site/events.schema.json
+          cp repo.json _site/repo.json
           touch _site/.nojekyll
 
       - name: Upload Pages artifact

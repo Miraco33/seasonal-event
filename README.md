@@ -2,6 +2,16 @@
 
 国服 Final Fantasy XIV 游戏内季节活动提醒插件。客户端实现位于本目录；活动采集与发布服务位于 `services/seasonal-event-collector/`，公共数据位于 `data/seasonal-event/`。
 
+## 在线安装
+
+当前版本是尚未完成游戏内验收的初始测试版。在游戏中打开 `/xlsettings`，进入 **Experimental**，将下面的地址加入 **Custom Plugin Repositories** 并保存：
+
+```text
+https://miraco33.github.io/seasonal-event/repo.json
+```
+
+随后在 `/xlplugins` 的可安装插件中搜索 `Seasonal Event`。第三方仓库清单会从 GitHub Release 下载与清单版本一致的插件 ZIP；状态页、`events.json` 和 Schema 都不是插件安装地址。
+
 ## 构建
 
 该目录是可独立克隆和发布的仓库。安装 `global.json` 固定的 .NET SDK，并准备 Dalamud 开发环境后执行：

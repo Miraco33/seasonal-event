@@ -68,6 +68,7 @@
     }
 
     .status-panel,
+    .install-panel,
     .event-card,
     .message {
       border: 1px solid var(--line);
@@ -83,6 +84,44 @@
       overflow: hidden;
       margin-bottom: 36px;
       background: var(--line);
+    }
+
+    .install-panel {
+      margin-bottom: 36px;
+      padding: 24px;
+    }
+
+    .install-panel p {
+      margin: 10px 0 16px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .repo-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .repo-link code {
+      min-width: 0;
+      flex: 1;
+      overflow-wrap: anywhere;
+      border-radius: 10px;
+      padding: 11px 13px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.84rem;
+    }
+
+    .repo-link button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 15px;
+      color: white;
+      background: var(--accent);
+      cursor: pointer;
+      font-weight: 700;
     }
 
     .metric {
@@ -234,6 +273,7 @@
     @media (max-width: 430px) {
       .status-panel { grid-template-columns: 1fr; }
       .metric { min-height: auto; }
+      .repo-link { align-items: stretch; flex-direction: column; }
     }
   </style>
 </head>
@@ -264,6 +304,15 @@
       </div>
     </section>
 
+    <section class="install-panel" aria-labelledby="install-heading">
+      <h2 id="install-heading">游戏内在线安装</h2>
+      <p>在 <strong>/xlsettings → Experimental → Custom Plugin Repositories</strong> 中添加此地址，再到 <strong>/xlplugins</strong> 搜索 Seasonal Event。当前为尚未完成游戏内验收的初始测试版。</p>
+      <div class="repo-link">
+        <code id="repo-url">https://miraco33.github.io/seasonal-event/repo.json</code>
+        <button id="copy-repo" type="button">复制仓库链接</button>
+      </div>
+    </section>
+
     <section aria-labelledby="current-heading">
       <div class="section-head">
         <h2 id="current-heading">正在进行</h2>
@@ -278,6 +327,7 @@
       <span>数据仅供插件提醒使用</span>
       <a href="./events.json">查看 events.json</a>
       <a href="./events.schema.json">查看 JSON Schema</a>
+      <a href="./repo.json">查看第三方仓库清单</a>
       <a href="https://github.com/Miraco33/seasonal-event">GitHub 仓库</a>
     </footer>
   </main>
@@ -406,6 +456,16 @@
     }
 
     loadEvents();
+
+    document.getElementById("copy-repo").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      try {
+        await navigator.clipboard.writeText(document.getElementById("repo-url").textContent);
+        button.textContent = "已复制";
+      } catch {
+        button.textContent = "请手动复制";
+      }
+    });
   </script>
 </body>
 </html>
