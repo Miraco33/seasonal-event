@@ -73,6 +73,13 @@ jobs:
               candidate_discovery_failed: "官方活动公告检查失败，需要查看东京服务器上的最近运行状态。",
               run_failed: "采集或发布前校验失败，需要查看东京服务器上的最近运行状态。",
             };
+            const titleByCode = {
+              candidate_review_required: "【自动提醒】发现新的季节活动，等待审核",
+              event_ending_without_candidate: "【自动提醒】当前活动即将结束，尚未发现下一活动",
+              no_active_event_without_candidate: "【自动提醒】当前无开放活动，尚未发现下一活动",
+              candidate_discovery_failed: "【自动告警】官方活动公告检查失败",
+              run_failed: "【自动告警】季节活动采集运行失败",
+            };
             const gapNames = {
               detail_fields_not_inspected: "核对标题、时间、任务与 NPC",
               stable_event_id: "分配稳定活动 ID",
@@ -82,6 +89,8 @@ jobs:
             };
             const lines = [
               marker,
+              "> 此 Issue 由活动采集器自动维护，用于提醒仓库维护者；它不表示插件客户端发生故障。",
+              "",
               reasonByCode[report.code] || `采集器报告需要处理：${String(report.code || "unknown")}`,
               "",
               `状态：\`${String(report.status || "unknown")}\`  原因：\`${String(report.code || "unknown")}\``,
@@ -101,9 +110,9 @@ jobs:
                 lines.push(`- **${title || "未命名活动"}**：<${url}>`, `  - 待处理：${gaps}`);
               }
             }
-            lines.push("", "处理步骤见 `services/seasonal-event-collector/README.md` 的“下一活动审核流程”。");
+            lines.push("", "处理步骤见 `services/seasonal-event-collector/README.md` 的“下一活动审核流程”。状态恢复正常后，此 Issue 会自动关闭。");
             const body = lines.join("\n");
-            const title = "Seasonal Event：活动采集需要处理";
+            const title = titleByCode[report.code] || "【自动告警】季节活动采集需要处理";
 
             if (existing) {
               if (existing.state !== "open" || existing.title !== title || existing.body !== body) {

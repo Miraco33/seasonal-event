@@ -3,7 +3,7 @@
     "Author": "Miraco33",
     "Name": "Seasonal Event",
     "Punchline": "提醒尚未完成的国服季节活动",
-    "Description": "国服 Final Fantasy XIV 游戏内季节活动提醒。支持每日提醒、任务与成就完成判断、任务地图旗标、定时刷新、离线缓存和脱敏诊断信息。当前为尚未完成游戏内验收的测试版。",
+    "Description": "国服 Final Fantasy XIV 游戏内季节活动提醒。支持每日提醒、任务与成就完成判断、任务地图旗标、定时刷新、离线缓存和脱敏诊断信息。核心功能已完成游戏内验证，当前为公开测试版。",
     "InternalName": "seasonalevent",
     "AssemblyVersion": "0.1.1.0",
     "RepoUrl": "https://github.com/Miraco33/seasonal-event",

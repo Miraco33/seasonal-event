@@ -4,7 +4,7 @@
 
 ## 在线安装
 
-当前版本是尚未完成游戏内验收的初始测试版。在游戏中打开 `/xlsettings`，进入 **Experimental**，将下面的地址加入 **Custom Plugin Repositories** 并保存：
+当前版本是已完成核心功能游戏内验证的公开测试版。在游戏中打开 `/xlsettings`，进入 **Experimental**，将下面的地址加入 **Custom Plugin Repositories** 并保存：
 
 ```text
 https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.json
@@ -147,4 +147,6 @@ https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.j
 
 奖励条目显示名称；鼠标悬浮时会展示采集到的类别、描述和限制。地图 `x/y/z` 是 `IGameGui.OpenMapWithMapLink` 所需的游戏世界坐标；官网显示坐标单独保存在 `displayX/displayY`，不能直接混用。
 
-无法在普通构建中验证角色登录、成就读取、地图旗标或 Teleporter IPC。这些仍须在兼容的 Dalamud 开发环境中手动验证。采集器的具体运行与 Docker/Oracle 部署步骤见 `services/seasonal-event-collector/README.md`。
+2026-09-05 已在兼容的 Dalamud 环境中手动验证第三方仓库安装与加载、登录提醒、远程数据刷新、成就完成识别和任务地图旗标。诊断信息显示数据源、缓存、最近刷新、数据版本和错误状态均正常；完成活动后，数据源中的活动仍保留，但客户端能够正确将其从待办列表中排除。
+
+尚未完成的游戏内检查只剩忽略/恢复，以及活动数据提供传送目标时的 Teleporter IPC。当前活动数据没有传送目标，地图旗标功能已经验证；采集器的具体运行与 Docker/Oracle 部署步骤见 `services/seasonal-event-collector/README.md`。
