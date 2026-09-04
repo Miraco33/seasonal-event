@@ -1,9 +1,10 @@
 FROM node:22-bookworm AS build
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.json ./
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN npm ci
 COPY src ./src
-RUN npm run build
+RUN npm run build && npm prune --omit=dev
 
 FROM mcr.microsoft.com/playwright:v1.52.0-noble
 WORKDIR /app
