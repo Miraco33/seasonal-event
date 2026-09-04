@@ -14,7 +14,7 @@
     "audit:recent": "npm run build && node scripts/audit-history.mjs --since=2025 --strict"
   },
   "dependencies": {
-    "playwright": "1.55.1"
+    "playwright": "1.62.1"
   },
   "devDependencies": {
     "@types/node": "22.13.10",

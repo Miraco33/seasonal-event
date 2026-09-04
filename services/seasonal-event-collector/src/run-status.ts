@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import type { EventsDocument } from "./models.js";
 
 export function writeDiagnostic(value: Record<string, unknown>): void {
   console.warn(JSON.stringify({
@@ -30,11 +31,23 @@ export async function writeCandidateReport(value: {
   code: string;
   candidates: unknown[];
   failedDiscoverySources?: string[];
+  failedPhase?: string;
 }): Promise<void> {
   const output = process.env.CANDIDATE_OUTPUT_FILE?.trim();
   if (!output) return;
   const serialized = `${JSON.stringify({ schemaVersion: 1, ...value }, null, 2)}\n`;
   await writeAtomic(output, serialized);
+}
+
+export async function writePreviewDocument(document: EventsDocument): Promise<void> {
+  console.log(JSON.stringify({
+    type: "seasonal-event-collector-preview",
+    schemaVersion: 1,
+    document,
+  }, null, 2));
+  const output = process.env.PREVIEW_OUTPUT_FILE?.trim();
+  if (!output) return;
+  await writeAtomic(output, `${JSON.stringify(document, null, 2)}\n`);
 }
 
 async function writeAtomic(output: string, serialized: string): Promise<void> {

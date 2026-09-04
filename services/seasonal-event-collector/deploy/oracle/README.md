@@ -1,6 +1,6 @@
 # Oracle A1 部署
 
-该目录用于把采集器部署为东京 OCI A1 上的一次性 Docker Compose 任务。容器不监听端口、不加入现有业务网络，也不持有 GitHub 凭据。容器读取仓库内版本化的 `config/collector.json`，把活动数据和候选报告写入宿主机的临时 staging 目录，并把最新运行状态原子保存到持久的 `status/latest.json`。`run-and-publish.sh` 确认数据确有变化后，才通过仓库专用 SSH deploy key 提交并推送。
+该目录用于把采集器部署为东京 OCI A1 上的一次性 Docker Compose 任务。容器不监听端口、不加入现有业务网络，也不持有 GitHub 凭据。容器读取仓库内版本化的 `config/collector.json`，把活动数据和候选报告写入宿主机的临时 staging 目录，并把采集状态原子保存到持久的 `status/collector.json`。包装脚本确认数据确有变化后，才通过仓库专用 SSH deploy key 提交并推送；包含 Git 同步和推送结果的最终状态保存在 `status/latest.json`。
 
 2026-09-04 从该 A1 实例直连当前盛趣活动页连续返回 HTTP 200，页面主资源也可访问，无需设置代理。该结果是部署前网络快照，上线前仍需用 ARM64 容器执行一次 dry-run。
 
@@ -20,9 +20,9 @@
 4. 以宿主机账号的非 root UID/GID 运行一次性容器；容器使用 `filesystem` 模式，只能写 staging。
 5. 字节内容未变化时直接结束，不产生提交。变化时在临时仓库中只提交这两个数据文件，再通过 SSH deploy key 推送。
 
-`candidates.json` 不包含运行 ID 或时间戳，只在候选、审核状态或“下一活动缺失”状态变化时产生 Git 差异。`status/latest.json` 包含完整运行时间、阶段、重试次数和错误详情，只保留在服务器，不提交。
+`candidates.json` 不包含运行 ID 或时间戳，只在候选、审核状态或“下一活动缺失”状态变化时产生 Git 差异。`status/collector.json` 包含页面采集时间、阶段、重试次数和错误详情；`status/latest.json` 记录包装脚本的最终结果，能够区分未变化、已推送、dry-run 和发布失败。成功的 dry-run 还会把完整待发布数据保存为 `status/preview.json`。这些状态和预览文件只保留在服务器，不提交。
 
-采集、校验、提交或推送失败都不会用 staging 覆盖长期部署检出中的旧数据。推送使用临时仓库，也不会把 `.env`、输出文件或服务器上的其他改动加入提交。
+采集或校验失败不会覆盖长期部署检出中的 `events.json`；包装脚本只允许把状态为 `error` 的候选运营报告提交到仓库以触发告警。提交或推送失败时远端保持不变。推送使用临时仓库，也不会把 `.env`、输出文件或服务器上的其他改动加入提交。
 
 ## 准备仓库专用 deploy key
 
@@ -54,6 +54,8 @@ chmod 0755 run-and-publish.sh
 docker compose -f compose.yml build collector
 ./run-and-publish.sh --dry-run
 cat status/latest.json
+cat status/collector.json
+cat status/preview.json
 ```
 
 镜像只在首次部署或采集器代码、依赖、Dockerfile 更新后手动构建。定时脚本只调用 `docker compose run`，不执行 `build`，因此不会每 6 小时重复构建。dry-run 会拉取仓库、读取当前数据并运行采集校验，但不会提交或推送。核对 `eventCount`、来源和活动资料后，执行一次完整流程：
@@ -81,7 +83,10 @@ sudo systemctl enable --now seasonal-event-collector.timer
 systemctl list-timers seasonal-event-collector.timer
 journalctl -u seasonal-event-collector.service -n 100 --no-pager
 cat /opt/oracle-services/seasonal-event/services/seasonal-event-collector/deploy/oracle/status/latest.json
+cat /opt/oracle-services/seasonal-event/services/seasonal-event-collector/deploy/oracle/status/collector.json
 ```
+
+`status/preview.json` 只在成功 dry-run 后更新。只有同一次运行的 `status/latest.json` 中 `previewFile` 为 `preview.json` 时，才把它视为本次预览；日常定时运行不会刷新这个文件。
 
 ## 活动换期
 

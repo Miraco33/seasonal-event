@@ -1,0 +1,87 @@
+name: Validate published data
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - data/seasonal-event/**
+      - .github/workflows/data-validation.yml
+  pull_request:
+    paths:
+      - data/seasonal-event/**
+      - .github/workflows/data-validation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Validate event and candidate documents
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const events = JSON.parse(fs.readFileSync("data/seasonal-event/events.json", "utf8"));
+          const report = JSON.parse(fs.readFileSync("data/seasonal-event/candidates.json", "utf8"));
+
+          function fail(message) { throw new Error(message); }
+          function validDate(value) { return typeof value === "string" && Number.isFinite(Date.parse(value)); }
+          function httpsUrl(value, host) {
+            try {
+              const url = new URL(value);
+              return url.protocol === "https:" && (!host || url.hostname === host);
+            } catch { return false; }
+          }
+
+          if (events.schemaVersion !== 1 || !Number.isInteger(events.dataVersion) || events.dataVersion < 1 ||
+              !validDate(events.publishedAt) || !Array.isArray(events.events)) {
+            fail("events.json has an invalid document header");
+          }
+          const eventIds = new Set();
+          for (const event of events.events) {
+            if (!event || typeof event.id !== "string" || !event.id || eventIds.has(event.id)) fail("invalid or duplicate event id");
+            eventIds.add(event.id);
+            if (!event.title || !event.questName || !event.questNpc) fail(`missing event text: ${event.id}`);
+            if (!validDate(event.startAt) || !validDate(event.endAt) || Date.parse(event.endAt) <= Date.parse(event.startAt)) {
+              fail(`invalid event window: ${event.id}`);
+            }
+            if (!httpsUrl(event.sourceUrl, "actff1.web.sdo.com")) fail(`invalid event source: ${event.id}`);
+            if (!event.location || !Number.isInteger(event.location.territoryId) || !Number.isInteger(event.location.mapId)) {
+              fail(`invalid event location: ${event.id}`);
+            }
+            if (!Array.isArray(event.rewards) || event.rewards.length === 0 || event.rewards.some((reward) => !reward?.name)) {
+              fail(`invalid event rewards: ${event.id}`);
+            }
+          }
+
+          const allowedReports = new Set([
+            "unknown:not_evaluated",
+            "ok:healthy",
+            "ok:no_candidate_found",
+            "alert:event_ending_without_candidate",
+            "alert:no_active_event_without_candidate",
+            "alert:candidate_discovery_failed",
+            "review_required:candidate_review_required",
+            "error:run_failed",
+          ]);
+          if (report.schemaVersion !== 1 || !Array.isArray(report.candidates) ||
+              !allowedReports.has(`${report.status}:${report.code}`)) {
+            fail("candidates.json has an invalid document header");
+          }
+          const candidateUrls = new Set();
+          for (const candidate of report.candidates) {
+            if (!candidate || candidate.reviewStatus !== "pending" ||
+                !httpsUrl(candidate.url, "actff1.web.sdo.com") || candidateUrls.has(candidate.url)) {
+              fail("invalid or duplicate candidate");
+            }
+            candidateUrls.add(candidate.url);
+          }
+          console.log(`validated ${events.events.length} events and ${report.candidates.length} candidates`);
+          NODE

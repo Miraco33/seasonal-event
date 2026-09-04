@@ -31,4 +31,4 @@
 
 ## 当前版本
 
-当前为初始测试版，尚未完成游戏内完整验收。如果遇到活动信息不准确、提醒异常、地图位置错误或其他问题，请在 [GitHub Issues](https://github.com/Miraco33/seasonal-event/issues) 反馈。
+当前为 0.1.1 测试版，尚未完成游戏内完整验收。如果遇到活动信息不准确、提醒异常、地图位置错误或其他问题，请在 [GitHub Issues](https://github.com/Miraco33/seasonal-event/issues) 反馈。

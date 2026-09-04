@@ -5,7 +5,7 @@ import type { DiscoveryCandidate } from "./discovery.js";
 import type { EventsDocument } from "./models.js";
 import { assessNextEventReadiness } from "./operations.js";
 import { assertEventCollectionIsPublishable, preparePublication, publish } from "./publisher.js";
-import { writeCandidateReport, writeDiagnostic, writeRunStatus } from "./run-status.js";
+import { writeCandidateReport, writeDiagnostic, writePreviewDocument, writeRunStatus } from "./run-status.js";
 import { collectEvents } from "./source.js";
 import { validateDocument } from "./validate.js";
 
@@ -16,6 +16,7 @@ const dryRun = process.argv.includes("--dry-run");
 const discoverOnly = process.argv.includes("--discover-only");
 let phase = "configuration";
 let networkRetries = 0;
+let latestReviewCandidates: unknown[] = [];
 
 async function main(): Promise<void> {
   const configuration = loadCollectorConfiguration();
@@ -43,6 +44,7 @@ async function main(): Promise<void> {
     new Date(Date.now() - discoveryLookbackDays * 86_400_000),
   );
   const reviewCandidates = addCandidateReviewGaps(discovery.candidates, configuration);
+  latestReviewCandidates = reviewCandidates;
 
   if (discoverOnly) {
     const status = discovery.errors.length > 0 ? "alert" : discovery.candidates.length > 0 ? "review_required" : "ok";
@@ -92,6 +94,7 @@ async function main(): Promise<void> {
     events,
   };
   validateDocument(document);
+  if (dryRun) await writePreviewDocument(document);
   const changed = await publish(document, dryRun, publication);
 
   phase = "readiness_assessment";
@@ -151,8 +154,26 @@ main().catch(async error => {
     error: {
       name: error instanceof Error ? error.name : "Error",
       message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error && error.stack ? error.stack.slice(0, 8000) : null,
     },
   };
+  try {
+    await writeCandidateReport({
+      status: "error",
+      code: "run_failed",
+      candidates: latestReviewCandidates,
+      failedPhase: phase,
+    });
+  } catch (candidateStatusError) {
+    console.error(JSON.stringify({
+      type: "seasonal-event-collector-diagnostic",
+      schemaVersion: 1,
+      at: new Date().toISOString(),
+      level: "error",
+      code: "candidate_status_write_failed",
+      message: candidateStatusError instanceof Error ? candidateStatusError.message : String(candidateStatusError),
+    }));
+  }
   try {
     await writeRunStatus(failure);
   } catch (statusError) {

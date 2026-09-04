@@ -14,8 +14,9 @@ services:
       CANDIDATE_OUTPUT_FILE: /app/output/candidates.json
       HOME: /tmp
       OUTPUT_FILE: /app/output/events.json
+      PREVIEW_OUTPUT_FILE: /app/status/preview.json
       PUBLISH_MODE: filesystem
-      STATUS_OUTPUT_FILE: /app/status/latest.json
+      STATUS_OUTPUT_FILE: /app/status/collector.json
       TZ: Asia/Shanghai
     volumes:
       - type: bind

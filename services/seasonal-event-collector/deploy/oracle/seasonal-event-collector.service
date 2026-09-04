@@ -3,8 +3,6 @@ Description=Collect and publish FFXIV seasonal-event data
 After=docker.service network-online.target
 Wants=network-online.target
 Requires=docker.service
-ConditionPathExists=/opt/oracle-services/seasonal-event/services/seasonal-event-collector/deploy/oracle/.env
-ConditionPathExists=/home/ubuntu/.ssh/seasonal-event-deploy
 
 [Service]
 Type=oneshot

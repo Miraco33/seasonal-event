@@ -14,6 +14,13 @@ npm run discover
 npm start -- --dry-run
 ```
 
+如需把本机 dry-run 的预览保存为文件，可先设置 `PREVIEW_OUTPUT_FILE`；不设置时完整预览仍会输出到终端：
+
+```powershell
+$env:PREVIEW_OUTPUT_FILE = Join-Path $PWD "output/preview.json"
+npm start -- --dry-run
+```
+
 历史官网模板兼容性可用 `npm run audit:history` 复查；页面清单、结果基线和已知图片字段限制见 `../../docs/HISTORICAL_COMPATIBILITY.md`。
 
 若本机没有 Playwright 管理的 Chromium，但已经安装 Chrome 或 Edge，可把 `PLAYWRIGHT_EXECUTABLE_PATH` 指向浏览器可执行文件；Docker 镜像已自带匹配的浏览器，不需要设置。
@@ -39,7 +46,9 @@ Oracle 云服务器使用同一镜像和同一 `.env`，由 cron 或 systemd 定
 
 采集器只在活动语义发生变化时发布并递增 `dataVersion`。比较时忽略文档级 `dataVersion`、`publishedAt` 和每个活动的 `lastVerifiedAt`；其他字段、字段值和数组顺序都参与比较。内容未变化时日志包含 `changed=false`，不会覆盖文件或调用 GitHub 更新接口，已有版本号和时间戳保持不变。对象属性的书写顺序不影响比较。
 
-每次运行向标准输出写一条 `seasonal-event-collector-status` JSON。网络重试另写 `seasonal-event-collector-diagnostic` JSON。设置 `STATUS_OUTPUT_FILE` 后，最新完整状态会原子写入该文件；`CANDIDATE_OUTPUT_FILE` 则保存不含运行 ID、时间戳或剩余小时数的语义稳定报告，便于 GitHub 自动化在状态真正变化时通知维护者。
+每次运行向标准输出写一条 `seasonal-event-collector-status` JSON。网络重试另写 `seasonal-event-collector-diagnostic` JSON。设置 `STATUS_OUTPUT_FILE` 后，最新完整状态会原子写入该文件；`CANDIDATE_OUTPUT_FILE` 则保存不含运行 ID、时间戳或剩余小时数的语义稳定报告，便于 GitHub 自动化在状态真正变化时通知维护者。dry-run 总会把已经通过完整校验、但不会正式发布的预览文档写到标准输出；设置 `PREVIEW_OUTPUT_FILE` 后还会原子保存到指定文件。
+
+仓库的 `candidate-alert.yml` 在候选报告变为待审核、换期告警或采集错误时创建或更新一个 GitHub Issue；状态恢复为明确的 `ok` 后自动关闭。致命采集错误只允许更新候选诊断，Oracle 包装脚本会强制保留上一版 `events.json`，不会把失败运行生成的活动数据发布出去。
 
 `filesystem` 模式读取 `OUTPUT_FILE`，并用同目录锁文件阻止两个定时或手动任务同时发布；获得锁后还会重新核对语义和版本，目标已被其他任务更新时会跳过重复内容或安全失败。`github` 模式读取目标分支的当前 JSON，并以同一次读取取得的 SHA 做条件更新。目标文件尚不存在时从 `1` 开始。已有文件无法读取、JSON 损坏或缺少有效 `dataVersion` 时任务会失败，不会把版本重置为 `1`。
 
@@ -47,9 +56,9 @@ Oracle 云服务器使用同一镜像和同一 `.env`，由 cron 或 systemd 定
 
 采集结果为空时任务默认失败，防止官网 DOM 变化把已有 feed 覆盖为空。只有确认空 feed 是预期结果时，才可显式设置 `ALLOW_EMPTY_EVENTS=true`；其他值（包括 `false` 和 `TRUE`）都不会解除保护。
 
-`--dry-run` 仍会抓取、执行空列表保护和校验、读取当前版本并计算 `changed`，但不会写入临时文件、挂载目录或向 GitHub 发送更新请求。生产定时任务应先在日志中确认 `eventCount` 与预期一致。
+`--dry-run` 仍会抓取、执行空列表保护和校验、读取当前版本并计算 `changed`，但不会替换 `events.json` 或向 GitHub 发送更新请求。若配置了状态、候选或预览输出，它只写这些诊断文件。生产定时任务应先核对预览内容和 `eventCount`。
 
-采集和校验失败时进程返回非零状态，不覆盖已有输出。`github` 模式只在校验通过后提交。
+采集和校验失败时进程返回非零状态，不覆盖已有的正式活动数据。Oracle 包装脚本可以单独提交状态为 `error` 的候选运营报告以触发告警；`github` 发布模式仍只在活动数据校验通过后提交。
 
 ## 当前限制
 
@@ -113,7 +122,7 @@ Oracle 云服务器使用同一镜像和同一 `.env`，由 cron 或 systemd 定
 2. 打开候选专题，确认它属于插件的产品范围。无关候选加入 `sources.ignored`；需要持续观察但尚未确认的链接加入 `sources.pending`。
 3. 对确认收录的页面先在 `eventIds` 中指定永久 ID。ID 与来源 URL 绑定，不随官网标题变化；缺少映射的正式来源会立即失败。
 4. 在 `overrides.locations`、`overrides.rewards` 和 `overrides.completion` 补充人工核验数据。候选报告中的 `reviewGaps` 会列出尚缺的稳定 ID 和各类覆盖项；`detail_fields_not_inspected` 表示仍需人工核对标题、时间、NPC、等级和页面奖励。
-5. 临时通过 `SOURCE_URLS` 加入该 URL，运行 `npm start -- --dry-run`，核对结构化结果且确认 `eventCount` 正确。
+5. 临时通过 `SOURCE_URLS` 加入该 URL，运行 `npm start -- --dry-run`，从标准输出或 `PREVIEW_OUTPUT_FILE` 检查完整结构化活动，核对标题、时间、NPC、坐标、奖励和完成 ID，并确认 `eventCount` 正确。
 6. dry-run 通过后把 URL 加入 `sources.approved`，从 `sources.pending` 移除，再提交配置。正式定时任务只采集 `sources.approved`，不会把自动发现结果直接上线。
 
 默认 `NEXT_EVENT_WARNING_HOURS=168`。当前没有已审核的未来活动时，任一进行中活动进入最后 168 小时会产生 `event_ending_without_candidate`；活动已经结束且仍无候选时产生 `no_active_event_without_candidate`。两者都写入稳定候选报告并以退出码 `2` 结束，使 systemd 明确显示需要维护者处理。
