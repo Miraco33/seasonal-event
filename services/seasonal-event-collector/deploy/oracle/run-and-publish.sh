@@ -9,6 +9,7 @@ DATA_PATH="data/seasonal-event/events.json"
 CURRENT_DATA="$REPOSITORY_ROOT/$DATA_PATH"
 BRANCH="main"
 DEPLOY_KEY_PATH=${DEPLOY_KEY_PATH:-"${HOME:-/home/ubuntu}/.ssh/seasonal-event-deploy"}
+KNOWN_HOSTS_PATH=${GITHUB_KNOWN_HOSTS_PATH:-"${HOME:-/home/ubuntu}/.ssh/seasonal-event-known_hosts"}
 DRY_RUN=0
 
 case "${1:-}" in
@@ -34,6 +35,10 @@ fi
 
 if [ ! -r "$DEPLOY_KEY_PATH" ]; then
   echo "repository deploy key is not readable: $DEPLOY_KEY_PATH" >&2
+  exit 77
+fi
+if [ ! -r "$KNOWN_HOSTS_PATH" ]; then
+  echo "dedicated GitHub known-hosts file is not readable: $KNOWN_HOSTS_PATH" >&2
   exit 77
 fi
 
@@ -73,7 +78,7 @@ case "$REMOTE_URL" in
     ;;
 esac
 
-GIT_SSH_COMMAND="/usr/bin/ssh -i $DEPLOY_KEY_PATH -o IdentitiesOnly=yes -o BatchMode=yes"
+GIT_SSH_COMMAND="/usr/bin/ssh -i $DEPLOY_KEY_PATH -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$KNOWN_HOSTS_PATH"
 export GIT_SSH_COMMAND
 
 git -C "$REPOSITORY_ROOT" pull --ff-only --no-rebase origin "$BRANCH"

@@ -13,6 +13,7 @@ Group=ubuntu
 SupplementaryGroups=docker
 WorkingDirectory=/opt/oracle-services/seasonal-event/services/seasonal-event-collector/deploy/oracle
 Environment=DEPLOY_KEY_PATH=/home/ubuntu/.ssh/seasonal-event-deploy
+Environment=GITHUB_KNOWN_HOSTS_PATH=/home/ubuntu/.ssh/seasonal-event-known_hosts
 ExecStart=/opt/oracle-services/seasonal-event/services/seasonal-event-collector/deploy/oracle/run-and-publish.sh
 TimeoutStartSec=20min
 Nice=10

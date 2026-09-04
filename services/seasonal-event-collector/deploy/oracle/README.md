@@ -32,7 +32,7 @@ ssh-keygen -t ed25519 -f /home/ubuntu/.ssh/seasonal-event-deploy -C seasonal-eve
 chmod 0600 /home/ubuntu/.ssh/seasonal-event-deploy
 ```
 
-把 `.pub` 内容添加到 GitHub 仓库 **Settings → Deploy keys**，勾选 **Allow write access**。确认 `github.com` 的 SSH 主机密钥已在 `/home/ubuntu/.ssh/known_hosts` 中，并测试此密钥只能访问目标仓库。服务器的 `origin` 必须是：
+把 `.pub` 内容添加到 GitHub 仓库 **Settings → Deploy keys**，勾选 **Allow write access**。从 GitHub 官方 API 的 `ssh_keys` 生成专用 `/home/ubuntu/.ssh/seasonal-event-known_hosts`，不要关闭主机密钥验证；脚本只使用这个文件。服务器的 `origin` 必须是：
 
 ```text
 git@github.com:Miraco33/seasonal-event.git
