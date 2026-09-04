@@ -43,11 +43,11 @@ jobs:
           cache: npm
           cache-dependency-path: services/seasonal-event-collector/package-lock.json
 
-      - name: Use npm with the current audit endpoint
-        run: npm install --global npm@12.0.2 --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org
-
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Use npm with the current audit endpoint
+        run: npm install --global npm@12.0.2 --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org
 
       - name: Build collector
         run: npm run build
