@@ -107,12 +107,12 @@ COLLECTOR_OUTPUT_DIR="$CONTAINER_OUTPUT"
 export COLLECTOR_UID COLLECTOR_GID COLLECTOR_OUTPUT_DIR
 
 if [ "$DRY_RUN" -eq 1 ]; then
-  docker compose -f "$COMPOSE_FILE" run --rm --no-deps --no-build collector --dry-run
+  docker compose -f "$COMPOSE_FILE" run --rm --no-deps collector --dry-run
   echo "dry-run completed; no commit or push was attempted"
   exit 0
 fi
 
-docker compose -f "$COMPOSE_FILE" run --rm --no-deps --no-build collector
+docker compose -f "$COMPOSE_FILE" run --rm --no-deps collector
 
 GENERATED_DATA="$CONTAINER_OUTPUT/events.json"
 if [ ! -s "$GENERATED_DATA" ]; then

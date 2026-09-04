@@ -53,7 +53,7 @@ docker compose -f compose.yml build collector
 ./run-and-publish.sh --dry-run
 ```
 
-镜像只在首次部署或采集器代码、依赖、Dockerfile 更新后手动构建。定时脚本使用 `docker compose run --no-build`，不会每 6 小时重复构建。dry-run 会拉取仓库、读取当前数据并运行采集校验，但不会提交或推送。核对 `eventCount`、来源和活动资料后，执行一次完整流程：
+镜像只在首次部署或采集器代码、依赖、Dockerfile 更新后手动构建。定时脚本只调用 `docker compose run`，不执行 `build`，因此不会每 6 小时重复构建。dry-run 会拉取仓库、读取当前数据并运行采集校验，但不会提交或推送。核对 `eventCount`、来源和活动资料后，执行一次完整流程：
 
 ```sh
 ./run-and-publish.sh
