@@ -4,7 +4,7 @@
 
 ## 在线安装
 
-当前版本是已完成核心功能游戏内验证的公开测试版。在游戏中打开 `/xlsettings`，进入 **Experimental**，将下面的地址加入 **Custom Plugin Repositories** 并保存：
+当前版本为 1.0.0 正式版。在游戏中打开 `/xlsettings`，进入 **Experimental**，将下面的地址加入 **Custom Plugin Repositories** 并保存：
 
 ```text
 https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.json
@@ -150,3 +150,15 @@ https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.j
 2026-09-05 已在兼容的 Dalamud 环境中手动验证第三方仓库安装与加载、登录提醒、远程数据刷新、成就完成识别和任务地图旗标。诊断信息显示数据源、缓存、最近刷新、数据版本和错误状态均正常；完成活动后，数据源中的活动仍保留，但客户端能够正确将其从待办列表中排除。
 
 尚未完成的游戏内检查只剩忽略/恢复，以及活动数据提供传送目标时的 Teleporter IPC。当前活动数据没有传送目标，地图旗标功能已经验证；采集器的具体运行与 Docker/Oracle 部署步骤见 `services/seasonal-event-collector/README.md`。
+
+## 自定义仓库发布流程
+
+本项目通过自己的 `repo.json` 分发，无需提交到 Dalamud 主库。用户添加仓库地址后，安装器依据 `AssemblyVersion` 和安装、更新下载链接获取 Release ZIP。
+
+1. 同步 `SeasonalEvent.csproj` 的三个版本字段、`seasonalevent.json`、`repo.json` 的版本和更新说明；新版本必须高于已发布版本。更新 `repo.json` 的下载地址与 `LastUpdate`。
+2. 更新用户说明，执行 `build.ps1 -Mode Release`。核对 ZIP 根目录只有插件 DLL、插件清单和 deps.json，且版本一致。
+3. 提交并创建对应 Git 标签。先推标签，创建普通 GitHub Release 并上传 `seasonalevent.zip`；核对公开下载内容与本地 SHA-256 一致。
+4. 安装包可下载后再推送 `main`，让固定仓库地址与 GitHub Pages 指向新版本。检查 Pages、数据和相关 Actions。
+5. 验证全新安装目录与旧版覆盖升级的包结构和配置兼容性；游戏内安装、加载及升级结果须另行实测。不得用包校验代替游戏内验证。
+
+1.0.0 沿用 0.1.1 的客户端逻辑和配置格式；忽略/恢复与可选传送按维护者决定留待后续活动验证。公开分发地址保持不变：`https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.json`。
