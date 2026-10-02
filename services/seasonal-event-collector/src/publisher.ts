@@ -39,8 +39,8 @@ export function assertEventCollectionIsPublishable(eventCount: number, allowEmpt
   }
 }
 
-export async function preparePublication(fetchImpl: Fetch = globalThis.fetch): Promise<PublicationPreparation> {
-  const configuration = getPublishConfiguration();
+export async function preparePublication(fetchImpl: Fetch = globalThis.fetch, outputFile?: string): Promise<PublicationPreparation> {
+  const configuration: PublishConfiguration = outputFile ? { mode: "filesystem", output: outputFile } : getPublishConfiguration();
   const existing = await readExistingPublication(configuration, fetchImpl);
   return {
     dataVersion: nextDataVersion(existing?.document),
@@ -55,8 +55,9 @@ export async function publish(
   document: EventsDocument,
   dryRun: boolean,
   prepared?: PublicationPreparation,
+  allowDerivedEmpty = false,
 ): Promise<boolean> {
-  assertEventCollectionIsPublishable(document.events.length, process.env.ALLOW_EMPTY_EVENTS);
+  assertEventCollectionIsPublishable(document.events.length, allowDerivedEmpty ? "true" : process.env.ALLOW_EMPTY_EVENTS);
   const publication = prepared ?? await preparePublication();
   if (document.dataVersion !== publication.dataVersion) {
     throw new Error(`dataVersion ${document.dataVersion} does not match the next published version ${publication.dataVersion}`);
@@ -171,14 +172,14 @@ function getPublishConfiguration(): PublishConfiguration {
   if (mode === "filesystem") {
     return {
       mode,
-      output: process.env.OUTPUT_FILE || "../../data/seasonal-event/events.json",
+      output: process.env.OUTPUT_FILE || "../../data/seasonal-event/events-v2.json",
     };
   }
 
   if (mode === "github") {
     const token = process.env.GITHUB_TOKEN;
     const repository = process.env.GITHUB_REPOSITORY;
-    const path = process.env.GITHUB_PATH || "data/seasonal-event/events.json";
+    const path = process.env.GITHUB_PATH || "data/seasonal-event/events-v2.json";
     const branch = process.env.GITHUB_BRANCH || "main";
     if (!token || !repository) throw new Error("GITHUB_TOKEN and GITHUB_REPOSITORY are required");
 

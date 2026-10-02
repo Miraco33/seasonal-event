@@ -25,21 +25,27 @@ export interface SeasonalEvent {
   title: string;
   startAt: string;
   endAt: string;
-  questName: string;
+  questName: string | null;
   questLevel: number | null;
-  questNpc: string;
+  questNpc: string | null;
   questId?: number | null;
-  location: EventLocation;
+  location: EventLocation | null;
   achievementId: number | null;
   teleport?: TeleportTarget | null;
   rewards: EventReward[];
   sourceUrl: string;
+  announcementUrl?: string;
   lastVerifiedAt: string;
 }
 
 export interface EventsDocument {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   dataVersion: number;
   publishedAt: string;
   events: SeasonalEvent[];
+  collectionStatus?: {
+    status: "ok" | "alert";
+    code: string;
+    unavailableSources?: string[];
+  };
 }

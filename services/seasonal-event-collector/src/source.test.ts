@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
+test("recognizes a seasonal quest heading with the official NPC introduction before its requirements", () => {
+  assert.equal(extractQuestName("新生庆典与音乐的轨迹\n舰尾楼的异国的诗人有点在意某件事。\n接受任务条件\n等级15", "新生庆典与音乐的轨迹"), "新生庆典与音乐的轨迹");
+});
 import {
   collectEvents,
   extractCoordinates,
@@ -36,9 +40,23 @@ test("selects the activity title instead of the generic seasonal-event heading",
   );
 });
 
-test("uses the activity title as the quest name without treating the requirements heading as a name", () => {
+test("rejects collaboration navigation and instruction headings in favor of the official document title", () => {
+  assert.equal(selectEventTitle([
+    "活动概要", "举办时间", "参加方法", "关于任务的推进", "关于「季节活动再现」",
+    "在《最终幻想14》的世界中创建角色！", "将角色等级提升至15级，完成支线任务「前往游乐场」",
+    "完成活动任务「抓紧胜利的王冠！」", "游玩联动任务，获得「金碟声誉」", "交换奖励道具", "道具兑换",
+  ], "最终幻想14 × Fall Guys 联动活动 | 《最终幻想14》官方网站"), "最终幻想14 × Fall Guys 联动活动");
+  assert.equal(selectEventTitle(["活动概要", "关于任务的推进"], "最终幻想14官方网站"), null);
+});
+
+test("recognizes a historical quest heading immediately preceding its requirements", () => {
   const body = "SEASONAL EVENT\n新生庆典与音乐的轨迹\n接受任务条件\n等级15";
   assert.equal(extractQuestName(body, "新生庆典与音乐的轨迹"), "新生庆典与音乐的轨迹");
+});
+
+test("does not substitute an activity title or a prerequisite for the activity quest name", () => {
+  assert.equal(extractQuestName("妖怪手表 艾欧泽亚大集合啦喵！", "妖怪手表 艾欧泽亚大集合啦喵！"), null);
+  assert.equal(extractQuestName("完成支线任务「前往游乐场」\n完成活动任务「抓紧胜利的王冠！」", "最终幻想14 × Fall Guys 联动活动"), "抓紧胜利的王冠！");
 });
 
 test("extracts the quest NPC from the official activity introduction", () => {
@@ -46,6 +64,7 @@ test("extracts the quest NPC from the official activity introduction", () => {
     extractNpc("舰尾楼的异国的诗人有点在意某件事。"),
     "异国的诗人",
   );
+  assert.equal(extractNpc("在乌尔达哈现世回廊出现的琪琵·嘉奇亚，似乎有什么话想对冒险者说。"), "琪琵·嘉奇亚");
 });
 
 test("extracts NPC names from historical official introduction wording", () => {
@@ -66,6 +85,23 @@ test("extracts NPC names from historical official introduction wording", () => {
 
 test("rejects a page without a complete time window", () => {
   assert.equal(parseTimeWindow("2026年8月27日15:00"), null);
+});
+
+test("parses numeric date separators, full-width clock punctuation and weekday labels", () => {
+  assert.deepEqual(parseTimeWindow("2026/9/24 16:00 — 2026/10/13 22:59"), {
+    startAt: "2026-09-24T16:00:00+08:00", endAt: "2026-10-13T23:00:00+08:00",
+  });
+  assert.deepEqual(parseTimeWindow("2026年10月7日（周三）16：00 至 10月27日22：59"), {
+    startAt: "2026-10-07T16:00:00+08:00", endAt: "2026-10-27T23:00:00+08:00",
+  });
+});
+
+test("rejects impossible calendar dates, malformed clocks and non-positive windows", () => {
+  for (const text of [
+    "2026年2月30日16:00 ～ 3月2日22:59", "2026年9月24日25:00 ～ 10月13日22:59",
+    "2026年9月24日16:99 ～ 10月13日22:59", "2026年9月24日16:00 ～ 9月24日16:00",
+    "2026年9月24日16:00 ～ 2025年10月13日22:59", "2026年9月24日16:00 ～ 10月13日22:599",
+  ]) assert.equal(parseTimeWindow(text), null, text);
 });
 
 test("handles an event whose end date crosses into the next year", () => {

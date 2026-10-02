@@ -1,0 +1,501 @@
+{
+  "schemaVersion": 2,
+  "dataVersion": 3,
+  "publishedAt": "2026-10-02T15:52:34.240Z",
+  "events": [
+    {
+      "id": "seasonal-58653ee55805",
+      "title": "最终幻想XIV x 最终幻想XV 「献给英雄的夜曲」",
+      "startAt": "2026-09-24T16:00:00+08:00",
+      "endAt": "2026-10-13T23:00:00+08:00",
+      "questName": "黑衣青年",
+      "questLevel": 50,
+      "questNpc": "琪琵·嘉奇亚",
+      "questId": null,
+      "location": null,
+      "achievementId": null,
+      "rewards": [],
+      "sourceUrl": "https://actff1.web.sdo.com/project/20260915ffxv/index.html",
+      "lastVerifiedAt": "2026-10-02T15:52:32.849Z",
+      "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393210"
+    },
+    {
+      "id": "seasonal-93e9ae835e8e",
+      "title": "妖怪手表 艾欧泽亚大集合啦喵！ 2026",
+      "startAt": "2026-08-04T16:00:00+08:00",
+      "endAt": "2026-10-05T23:00:00+08:00",
+      "questName": null,
+      "questLevel": null,
+      "questNpc": null,
+      "questId": null,
+      "location": null,
+      "achievementId": null,
+      "rewards": [
+        {
+          "name": "地缚猫",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "小狛",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "USA蹦",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "维斯帕",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "武士猫",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "浮游猫",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "狛次郎",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "野槌蛇",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "大蛇",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "九尾",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "机器猫F型",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "吹雪公主",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "人面犬",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "阎魔",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "蛇王凯拉",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "滑头鬼",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "百鬼公主",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "百斩斧·赤猫",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "白犬杖",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "宇宙拳套",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "智者大弓",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "妖刀・猫丸 圆阵猫盾",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "同田贯·冬猫",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "朱犬之书",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "幸运天球仪",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "蛇枪・鸦丸",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "九尾双剑",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "Ｆ型波动炮",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "雪姫杖",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "凭依教典",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "阎魔枪刃",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "蛇王刺剑",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "怪刀·浮世丸",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "百鬼圆阵",
+          "category": "武器",
+          "description": "",
+          "flags": []
+        }
+      ],
+      "sourceUrl": "https://actff1.web.sdo.com/project/20260715youkai-watch/vaz1gqm16a3h/index.html",
+      "lastVerifiedAt": "2026-10-02T15:52:30.437Z",
+      "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=391316"
+    },
+    {
+      "id": "seasonal-aae61e8dfaea",
+      "title": "新生庆典与音乐的轨迹",
+      "startAt": "2026-08-27T15:00:00+08:00",
+      "endAt": "2026-09-10T23:00:00+08:00",
+      "questName": "新生庆典与音乐的轨迹",
+      "questLevel": 15,
+      "questNpc": "异国的诗人",
+      "questId": 71046,
+      "location": {
+        "territoryId": 128,
+        "mapId": 11,
+        "x": -9.61439,
+        "y": 39.9998,
+        "z": 82.0985,
+        "displayX": 11,
+        "displayY": 12.8
+      },
+      "achievementId": 3875,
+      "rewards": [
+        {
+          "name": "迷你乌克·拉玛特",
+          "category": "宠物",
+          "description": "获得新宠物“迷你乌克·拉玛特”。以图莱尤拉联合王国的公主乌克·拉玛特为原型制作的魔法人偶。你跟我走一趟吧，到图莱尤拉来！",
+          "flags": [
+            "珍稀",
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "新生庆典桌面海报2025-2",
+          "category": "桌上",
+          "description": "描绘了新生庆典情景的绘画作品，可以装饰在桌上。",
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "新生庆典海报2025-2",
+          "category": "壁挂",
+          "description": "描绘了新生庆典情景的绘画作品。",
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "新生庆典海报2025",
+          "category": "壁挂",
+          "description": "描绘了新生庆典情景的绘画作品。",
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：主题曲 ～ 玛托雅的洞穴（转调版）",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«主题曲 ～ 玛托雅的洞穴（转调版）»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "珍稀",
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：悠久之风（转调版）",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«悠久之风（转调版）»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "珍稀",
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：在札纳尔坎德（转调版）",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«在札纳尔坎德（转调版）»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "珍稀",
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        }
+      ],
+      "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
+      "lastVerifiedAt": "2026-10-02T15:52:22.467Z"
+    },
+    {
+      "id": "seasonal-c5a1b1e9df45",
+      "title": "最终幻想14 × Fall Guys 联动活动",
+      "startAt": "2026-10-07T16:00:00+08:00",
+      "endAt": "2026-10-27T23:00:00+08:00",
+      "questName": "抓紧胜利的王冠！",
+      "questLevel": 15,
+      "questNpc": null,
+      "questId": null,
+      "location": null,
+      "achievementId": null,
+      "rewards": [
+        {
+          "name": "糖豆人针织帽",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "糖豆人卫衣",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "糖豆人打底裤",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "糖豆人运动鞋",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "哑光胜者王冠",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "闪亮胜者王冠",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "糖豆犀牛认证密钥",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "演技教材·大获全胜",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "粉红糖豆人",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "糖豆企鹅",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心胜者王冠",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心装饰旗",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心甜甜圈障碍柱",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心填充墙",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心彩虹柱",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心巨锤",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：快快落落糖豆人",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "肖像教材：金碟巨豆中心1",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "肖像教材：金碟巨豆中心2",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "肖像教材：金碟巨豆中心3",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "民用营养学指南",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟游乐场传送网使用券",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "追加染剂1",
+          "category": "",
+          "description": "",
+          "flags": []
+        }
+      ],
+      "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
+      "lastVerifiedAt": "2026-10-02T15:52:34.048Z",
+      "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393660"
+    }
+  ],
+  "collectionStatus": {
+    "status": "ok",
+    "code": "healthy"
+  }
+}

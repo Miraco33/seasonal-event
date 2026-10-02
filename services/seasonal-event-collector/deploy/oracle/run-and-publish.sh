@@ -7,9 +7,11 @@ COMPOSE_FILE="$SCRIPT_DIR/compose.yml"
 ENV_FILE="$SCRIPT_DIR/.env"
 OUTPUT_ROOT="$SCRIPT_DIR/output"
 STATUS_ROOT="$SCRIPT_DIR/status"
-DATA_PATH="data/seasonal-event/events.json"
+DATA_PATH="data/seasonal-event/events-v2.json"
+LEGACY_PATH="data/seasonal-event/events.json"
 CANDIDATE_PATH="data/seasonal-event/candidates.json"
 CURRENT_DATA="$REPOSITORY_ROOT/$DATA_PATH"
+CURRENT_LEGACY="$REPOSITORY_ROOT/$LEGACY_PATH"
 CURRENT_CANDIDATES="$REPOSITORY_ROOT/$CANDIDATE_PATH"
 BRANCH="main"
 DEPLOY_KEY_PATH=${DEPLOY_KEY_PATH:-"${HOME:-/home/ubuntu}/.ssh/seasonal-event-deploy"}
@@ -84,11 +86,11 @@ validate_collector_result() {
     exit 65
   fi
 
-  if ! python3 - "$generated_status" "$generated_candidates" "$COLLECTOR_EXIT" <<'PY'
+  if ! python3 - "$generated_status" "$generated_candidates" "$COLLECTOR_EXIT" "$CONTAINER_OUTPUT/events-v2.json" "$CONTAINER_OUTPUT/events.json" <<'PY'
 import json
 import sys
 
-status_path, candidate_path, exit_text = sys.argv[1:]
+status_path, candidate_path, exit_text, canonical_path, legacy_path = sys.argv[1:]
 with open(status_path, encoding="utf-8") as handle:
     status = json.load(handle)
 with open(candidate_path, encoding="utf-8") as handle:
@@ -109,6 +111,17 @@ if candidates.get("status") != status.get("status"):
     raise SystemExit("collector status does not match its candidate report")
 if not isinstance(status.get("code"), str) or not status["code"] or candidates.get("code") != status.get("code"):
     raise SystemExit("collector code does not match its candidate report")
+
+# A git pull does not rebuild the container. Reject an old image's schema-1
+# output at the schema-2 path instead of replacing the public feed.
+if exit_code in (0, 2):
+    for path, expected_schema in ((canonical_path, 2), (legacy_path, 1)):
+        with open(path, encoding="utf-8") as handle:
+            document = json.load(handle)
+        if not isinstance(document, dict) or document.get("schemaVersion") != expected_schema:
+            raise SystemExit(f"collector image emitted an incompatible schema at {path}; rebuild the image")
+        if not isinstance(document.get("events"), list) or not isinstance(document.get("dataVersion"), int) or document["dataVersion"] < 1:
+            raise SystemExit(f"collector emitted an invalid event document at {path}")
 PY
   then
     echo "collector produced an invalid or mismatched status document" >&2
@@ -125,7 +138,8 @@ PY
     1)
       # A late failure can happen after the collector wrote a candidate events
       # document to staging. Error runs may publish diagnostics, never event data.
-      cp -- "$CURRENT_DATA" "$CONTAINER_OUTPUT/events.json"
+      cp -- "$CURRENT_DATA" "$CONTAINER_OUTPUT/events-v2.json"
+      cp -- "$CURRENT_LEGACY" "$CONTAINER_OUTPUT/events.json"
       ;;
     2) ;;
   esac
@@ -133,6 +147,10 @@ PY
 
 if [ ! -f "$CURRENT_DATA" ]; then
   echo "current data file is missing: $CURRENT_DATA" >&2
+  exit 66
+fi
+if [ ! -f "$CURRENT_LEGACY" ]; then
+  echo "current legacy data file is missing: $CURRENT_LEGACY" >&2
   exit 66
 fi
 if [ ! -f "$CURRENT_CANDIDATES" ]; then
@@ -199,7 +217,8 @@ CONTAINER_OUTPUT="$STAGING_ROOT/container"
 CONTAINER_STATUS="$STAGING_ROOT/status"
 PUBLISH_REPOSITORY="$STAGING_ROOT/repository"
 mkdir -p "$CONTAINER_OUTPUT" "$CONTAINER_STATUS"
-cp -- "$CURRENT_DATA" "$CONTAINER_OUTPUT/events.json"
+cp -- "$CURRENT_DATA" "$CONTAINER_OUTPUT/events-v2.json"
+cp -- "$CURRENT_LEGACY" "$CONTAINER_OUTPUT/events.json"
 cp -- "$CURRENT_CANDIDATES" "$CONTAINER_OUTPUT/candidates.json"
 
 COLLECTOR_UID=$(id -u)
@@ -244,10 +263,15 @@ set -e
 validate_collector_result
 
 PUBLISH_PHASE="validate_output"
-GENERATED_DATA="$CONTAINER_OUTPUT/events.json"
+GENERATED_DATA="$CONTAINER_OUTPUT/events-v2.json"
+GENERATED_LEGACY="$CONTAINER_OUTPUT/events.json"
 GENERATED_CANDIDATES="$CONTAINER_OUTPUT/candidates.json"
 if [ ! -s "$GENERATED_DATA" ]; then
   echo "collector did not produce a non-empty data file" >&2
+  exit 65
+fi
+if [ ! -s "$GENERATED_LEGACY" ]; then
+  echo "collector did not produce a non-empty legacy data file" >&2
   exit 65
 fi
 if [ ! -s "$GENERATED_CANDIDATES" ]; then
@@ -255,7 +279,7 @@ if [ ! -s "$GENERATED_CANDIDATES" ]; then
   exit 65
 fi
 
-if cmp -s "$CURRENT_DATA" "$GENERATED_DATA" && cmp -s "$CURRENT_CANDIDATES" "$GENERATED_CANDIDATES"; then
+if cmp -s "$CURRENT_DATA" "$GENERATED_DATA" && cmp -s "$CURRENT_LEGACY" "$GENERATED_LEGACY" && cmp -s "$CURRENT_CANDIDATES" "$GENERATED_CANDIDATES"; then
   echo "seasonal-event data and candidate report are unchanged; no commit is needed"
   PUBLISH_PHASE="complete"
   PUBLISH_OUTCOME="unchanged"
@@ -266,10 +290,11 @@ PUBLISH_PHASE="publish"
 git clone --quiet --no-hardlinks --branch "$BRANCH" "$REPOSITORY_ROOT" "$PUBLISH_REPOSITORY"
 git -C "$PUBLISH_REPOSITORY" remote set-url origin "$REMOTE_URL"
 cp -- "$GENERATED_DATA" "$PUBLISH_REPOSITORY/$DATA_PATH"
+cp -- "$GENERATED_LEGACY" "$PUBLISH_REPOSITORY/$LEGACY_PATH"
 cp -- "$GENERATED_CANDIDATES" "$PUBLISH_REPOSITORY/$CANDIDATE_PATH"
-git -C "$PUBLISH_REPOSITORY" add -- "$DATA_PATH" "$CANDIDATE_PATH"
+git -C "$PUBLISH_REPOSITORY" add -- "$DATA_PATH" "$LEGACY_PATH" "$CANDIDATE_PATH"
 
-if git -C "$PUBLISH_REPOSITORY" diff --cached --quiet -- "$DATA_PATH" "$CANDIDATE_PATH"; then
+if git -C "$PUBLISH_REPOSITORY" diff --cached --quiet -- "$DATA_PATH" "$LEGACY_PATH" "$CANDIDATE_PATH"; then
   echo "seasonal-event data has no Git-visible change; no commit is needed"
   PUBLISH_PHASE="complete"
   PUBLISH_OUTCOME="unchanged"
@@ -280,7 +305,7 @@ git -C "$PUBLISH_REPOSITORY" \
   -c user.name="seasonal-event collector" \
   -c user.email="seasonal-event-collector@users.noreply.github.com" \
   -c commit.gpgSign=false \
-  commit --quiet -m "data: update seasonal events" -- "$DATA_PATH" "$CANDIDATE_PATH"
+  commit --quiet -m "data: update seasonal events" -- "$DATA_PATH" "$LEGACY_PATH" "$CANDIDATE_PATH"
 git -C "$PUBLISH_REPOSITORY" push origin "HEAD:refs/heads/$BRANCH"
 PUBLISHED_COMMIT=$(git -C "$PUBLISH_REPOSITORY" rev-parse HEAD)
 

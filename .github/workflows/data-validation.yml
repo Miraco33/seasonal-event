@@ -28,11 +28,11 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require("node:fs");
-          const events = JSON.parse(fs.readFileSync("data/seasonal-event/events.json", "utf8"));
+          const documents = ["events.json", "events-v2.json"].map((name) => ({ name, data: JSON.parse(fs.readFileSync(`data/seasonal-event/${name}`, "utf8")) }));
           const report = JSON.parse(fs.readFileSync("data/seasonal-event/candidates.json", "utf8"));
 
           function fail(message) { throw new Error(message); }
-          function validDate(value) { return typeof value === "string" && Number.isFinite(Date.parse(value)); }
+          function validDate(value) { return typeof value === "string" && /(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value)); }
           function httpsUrl(value, host) {
             try {
               const url = new URL(value);
@@ -40,25 +40,35 @@ jobs:
             } catch { return false; }
           }
 
-          if (events.schemaVersion !== 1 || !Number.isInteger(events.dataVersion) || events.dataVersion < 1 ||
+          for (const { name, data: events } of documents) {
+          const partial = name === "events-v2.json";
+          if (events.schemaVersion !== (partial ? 2 : 1) || !Number.isInteger(events.dataVersion) || events.dataVersion < 1 ||
               !validDate(events.publishedAt) || !Array.isArray(events.events)) {
-            fail("events.json has an invalid document header");
+            fail(`${name} has an invalid document header`);
           }
           const eventIds = new Set();
           for (const event of events.events) {
             if (!event || typeof event.id !== "string" || !event.id || eventIds.has(event.id)) fail("invalid or duplicate event id");
             eventIds.add(event.id);
-            if (!event.title || !event.questName || !event.questNpc) fail(`missing event text: ${event.id}`);
+            if (typeof event.title !== "string" || !event.title.trim() ||
+                (!partial && (!event.questName || !event.questNpc)) ||
+                [event.questName, event.questNpc].some(value => value != null && (typeof value !== "string" || !value.trim()))) fail(`missing or invalid event text: ${event.id}`);
             if (!validDate(event.startAt) || !validDate(event.endAt) || Date.parse(event.endAt) <= Date.parse(event.startAt)) {
               fail(`invalid event window: ${event.id}`);
             }
             if (!httpsUrl(event.sourceUrl, "actff1.web.sdo.com")) fail(`invalid event source: ${event.id}`);
-            if (!event.location || !Number.isInteger(event.location.territoryId) || !Number.isInteger(event.location.mapId)) {
+            if ((!partial && !event.location) || (event.location != null &&
+                (!Number.isInteger(event.location.territoryId) || event.location.territoryId <= 0 ||
+                 !Number.isInteger(event.location.mapId) || event.location.mapId <= 0 ||
+                 [event.location.x, event.location.y, event.location.z].some(value => !Number.isFinite(value) || Math.abs(value) > 100000)))) {
               fail(`invalid event location: ${event.id}`);
             }
-            if (!Array.isArray(event.rewards) || event.rewards.length === 0 || event.rewards.some((reward) => !reward?.name)) {
+            if (!Array.isArray(event.rewards) || (!partial && event.rewards.length === 0) || event.rewards.some((reward) => !reward?.name)) {
               fail(`invalid event rewards: ${event.id}`);
             }
+          }
+          if (events.collectionStatus !== undefined && (!events.collectionStatus ||
+              !["ok", "alert"].includes(events.collectionStatus.status) || !events.collectionStatus.code)) fail("invalid collection status");
           }
 
           const allowedReports = new Set([
@@ -68,6 +78,7 @@ jobs:
             "alert:event_ending_without_candidate",
             "alert:no_active_event_without_candidate",
             "alert:candidate_discovery_failed",
+            "alert:candidate_collection_failed",
             "review_required:candidate_review_required",
             "error:run_failed",
           ]);
@@ -83,5 +94,5 @@ jobs:
             }
             candidateUrls.add(candidate.url);
           }
-          console.log(`validated ${events.events.length} events and ${report.candidates.length} candidates`);
+          console.log(`validated both protocol versions and ${report.candidates.length} candidates`);
           NODE

@@ -6,6 +6,7 @@ using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility;
 using Lumina.Excel.Sheets;
 
 namespace SeasonalEvent;
@@ -293,10 +294,15 @@ public sealed class Plugin : IDalamudPlugin
             ImGui.TextUnformatted($"最近刷新：{FormatChinaTime(dataService.LastSuccessAt)}");
         }
 
+        var collectionAlert = dataService.Cached?.CollectionStatus?.Status == "alert";
+        if (collectionAlert)
+            DrawWarning("活动数据采集存在告警，请查看官网；当前列表可能不完整。");
         if (dataService.Cached == null)
             TextWrappedUnformatted(dataService.LastError ?? "正在获取活动数据……");
         else if (activeEvents.Count == 0)
-            TextWrappedUnformatted("当前没有正在进行且尚未忽略或完成的季节活动。");
+            TextWrappedUnformatted(collectionAlert
+                ? "当前已收录列表中没有正在进行且尚未忽略或完成的活动，请查看官网确认。"
+                : "当前没有正在进行且尚未忽略或完成的季节活动。");
         else
         {
             foreach (var item in activeEvents.ToArray())
@@ -306,22 +312,24 @@ public sealed class Plugin : IDalamudPlugin
                 var startAt = TimeZoneInfo.ConvertTime(item.StartAt, ChinaTimeZone);
                 var endAt = TimeZoneInfo.ConvertTime(item.EndAt, ChinaTimeZone);
                 ImGui.TextUnformatted($"时间：{startAt:yyyy-MM-dd HH:mm} - {endAt:yyyy-MM-dd HH:mm} (UTC+8)");
-                ImGui.TextUnformatted($"任务：{item.QuestName}");
-                ImGui.TextUnformatted($"接取：{item.QuestNpc}");
-                if (item.QuestLevel.HasValue) ImGui.TextUnformatted($"等级：{item.QuestLevel.Value}");
+                ImGui.TextUnformatted($"任务：{item.QuestName ?? "官网信息尚未提取"}");
+                ImGui.TextUnformatted($"接取：{item.QuestNpc ?? "官网信息尚未提取"}");
+                ImGui.TextUnformatted($"等级：{item.QuestLevel?.ToString(CultureInfo.InvariantCulture) ?? "官网信息尚未提取"}");
                 if (completionUnknownEventIds.Contains(item.Id))
                     DrawWarning("成就列表尚未加载，暂时无法确认该活动是否已经完成。");
                 if (completionIssues.TryGetValue(item.Id, out var issues))
                 {
                     foreach (var issue in issues) DrawWarning(issue);
                 }
-                if (ImGui.Button($"打开任务地图##{item.Id}"))
+                ImGui.BeginDisabled(item.Location == null);
+                if (ImGui.Button($"打开任务地图##{item.Id}") && item.Location is { } location)
                 {
-                    if (gameGui.OpenMapWithMapLink(item.Location.TerritoryId, item.Location.MapId, new Vector3(item.Location.X, item.Location.Y, item.Location.Z)))
+                    if (gameGui.OpenMapWithMapLink(location.TerritoryId, location.MapId, new Vector3(location.X, location.Y, location.Z)))
                         statusMessage = null;
                     else
                         statusMessage = "无法打开任务地图，请稍后重试。";
                 }
+                ImGui.EndDisabled();
                 if (item.Teleport != null && teleport.HasFunction)
                 {
                     ImGui.SameLine();
@@ -347,7 +355,10 @@ public sealed class Plugin : IDalamudPlugin
                     ImGui.TextDisabled("启用 Teleporter 后可一键传送");
                 }
                 ImGui.SameLine();
+                if (ImGui.Button($"查看官网##source-{item.Id}")) OpenOfficialPage(item.SourceUrl);
+                ImGui.SameLine();
                 if (ImGui.Button($"忽略##{item.Id}")) Ignore(item);
+                if (item.Location == null) ImGui.TextDisabled("任务地图尚未核验，请查看官网。");
                 if (item.Rewards.Count > 0)
                 {
                     ImGui.Text("奖励：");
@@ -368,6 +379,10 @@ public sealed class Plugin : IDalamudPlugin
                             ImGui.EndTooltip();
                         }
                     }
+                }
+                else
+                {
+                    ImGui.TextDisabled("奖励：官网信息尚未提取，请查看官网。");
                 }
             }
         }
@@ -442,6 +457,25 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OpenConfigUI() => windowVisible = true;
 
+    private void OpenOfficialPage(string url)
+    {
+        if (!EventDataValidation.TryNormalizeSourceUrl(url, out var normalizedUrl))
+        {
+            statusMessage = "活动官网地址无效。";
+            return;
+        }
+        try
+        {
+            Util.OpenLink(normalizedUrl);
+            statusMessage = null;
+        }
+        catch (Exception ex)
+        {
+            statusMessage = "无法打开活动官网，请稍后重试。";
+            log.Warning(ex, "Failed to open official seasonal event page");
+        }
+    }
+
     private static void TextWrappedUnformatted(string text)
     {
         ImGui.PushTextWrapPos();
@@ -485,6 +519,9 @@ public sealed class Plugin : IDalamudPlugin
         builder.AppendLine($"下次刷新：{(refreshInProgress ? "正在刷新" : FormatChinaTime(GetNextRefreshAt()))}");
         builder.AppendLine($"连续失败：{Interlocked.CompareExchange(ref consecutiveRefreshFailures, 0, 0)}");
         builder.AppendLine($"数据版本：{document?.DataVersion.ToString(CultureInfo.InvariantCulture) ?? "不可用"}");
+        builder.AppendLine($"数据格式：{document?.SchemaVersion.ToString(CultureInfo.InvariantCulture) ?? "不可用"}");
+        if (document?.CollectionStatus is { } collectionStatus)
+            builder.AppendLine($"采集状态：{collectionStatus.Status}（{collectionStatus.Code}）");
         builder.AppendLine($"数据发布时间：{FormatChinaTime(document?.PublishedAt)}");
         builder.AppendLine($"活动条目：{document?.Events.Count.ToString(CultureInfo.InvariantCulture) ?? "不可用"}");
         builder.Append($"最近错误：{GetSafeFailureMessage()}");

@@ -9,10 +9,20 @@ type CompletionOverride = {
   teleport?: TeleportTarget | null;
 };
 
+export interface EventMetadataOverride {
+  title?: string;
+  startAt?: string;
+  endAt?: string;
+  questName?: string | null;
+  questLevel?: number | null;
+  questNpc?: string | null;
+}
+
 export interface CollectorOverrides {
   locations: Record<string, EventLocation>;
   rewards: Record<string, EventReward[]>;
   completion: Record<string, CompletionOverride>;
+  metadata?: Record<string, EventMetadataOverride>;
 }
 
 export interface CollectorConfiguration {
@@ -69,6 +79,7 @@ export function loadCollectorConfiguration(): CollectorConfiguration {
       locations: { ...document.overrides.locations, ...readEnvironmentMap("LOCATION_OVERRIDES") } as Record<string, EventLocation>,
       rewards: { ...document.overrides.rewards, ...readEnvironmentMap("REWARD_OVERRIDES") } as Record<string, EventReward[]>,
       completion: { ...document.overrides.completion, ...readEnvironmentMap("COMPLETION_OVERRIDES") } as Record<string, CompletionOverride>,
+      metadata: { ...document.overrides.metadata, ...readEnvironmentMap("EVENT_METADATA_OVERRIDES") } as Record<string, EventMetadataOverride>,
     },
   };
 }
@@ -94,6 +105,9 @@ function parseConfigurationFile(contents: string, path: string): ConfigurationFi
   }
   for (const name of ["locations", "rewards", "completion"] as const) {
     if (!isRecord(overrides[name])) throw new Error(`collector configuration overrides.${name} must be an object`);
+  }
+  if (overrides.metadata !== undefined && !isRecord(overrides.metadata)) {
+    throw new Error(`collector configuration overrides.metadata must be an object`);
   }
   for (const [url, id] of Object.entries(value.eventIds)) {
     if (typeof id !== "string" || !/^[a-z0-9][a-z0-9-]{2,63}$/.test(id)) {

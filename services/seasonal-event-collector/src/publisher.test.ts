@@ -4,6 +4,16 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+
+test("only an explicitly derived legacy subset may be empty while canonical empty protection stays enabled", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "seasonal-derived-empty-"));
+  const prepared = await preparePublication(globalThis.fetch, join(directory, "legacy.json"));
+  const candidate = { ...documentWithVersion(1), events: [] };
+  await assert.rejects(publish(candidate, true, prepared), /refusing to publish an empty/);
+  assert.equal(await publish(candidate, true, prepared, true), true);
+  assert.equal(existsSync(join(directory, "legacy.json")), false);
+  await rm(directory, { recursive: true, force: true });
+});
 import type { EventsDocument } from "./models.js";
 import { assertEventCollectionIsPublishable, hasPublicationChanges, preparePublication, publish } from "./publisher.js";
 
@@ -73,6 +83,7 @@ function githubDocumentResponse(document: unknown, sha = "existing-sha"): Respon
 test("publication comparison ignores generated metadata and object key order", () => {
   const existing = documentWithVersion(12);
   const event = existing.events[0];
+  assert.ok(event.location);
   const candidate: EventsDocument = {
     events: [{
       lastVerifiedAt: "2026-09-04T00:00:00.000Z",

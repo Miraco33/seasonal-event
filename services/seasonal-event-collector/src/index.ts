@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { collectAutomaticEvents, legacyEvents } from "./collection.js";
 import { loadCollectorConfiguration } from "./configuration.js";
 import { discoverCandidatePages } from "./discovery.js";
 import type { DiscoveryCandidate } from "./discovery.js";
@@ -6,7 +8,6 @@ import type { EventsDocument } from "./models.js";
 import { assessNextEventReadiness } from "./operations.js";
 import { assertEventCollectionIsPublishable, preparePublication, publish } from "./publisher.js";
 import { writeCandidateReport, writeDiagnostic, writePreviewDocument, writeRunStatus } from "./run-status.js";
-import { collectEvents } from "./source.js";
 import { validateDocument } from "./validate.js";
 
 const runId = randomUUID();
@@ -23,7 +24,7 @@ async function main(): Promise<void> {
   const retryAttempts = readInteger("NETWORK_RETRY_ATTEMPTS", 3, 1, 10);
   const retryDelayMs = readInteger("NETWORK_RETRY_DELAY_MS", 1000, 0, 10000);
   const warningHours = readInteger("NEXT_EVENT_WARNING_HOURS", 168, 0, 8760);
-  const discoveryLookbackDays = readInteger("DISCOVERY_LOOKBACK_DAYS", 30, 1, 365);
+  const discoveryLookbackDays = readInteger("DISCOVERY_LOOKBACK_DAYS", 180, 1, 365);
   const networkOptions = {
     attempts: retryAttempts,
     baseDelayMs: retryDelayMs,
@@ -43,13 +44,15 @@ async function main(): Promise<void> {
     networkOptions,
     new Date(Date.now() - discoveryLookbackDays * 86_400_000),
   );
-  const reviewCandidates = addCandidateReviewGaps(discovery.candidates, configuration);
+  const savedCandidates = await readSavedCandidates(configuration);
+  const discoveredCandidates = [...new Map([...savedCandidates, ...discovery.candidates].map(candidate => [candidate.url, candidate])).values()];
+  let reviewCandidates = discoveredCandidates.map(candidate => ({ ...candidate, reviewGaps: ["required_title_or_time_not_verified"] }));
   latestReviewCandidates = reviewCandidates;
 
   if (discoverOnly) {
-    const status = discovery.errors.length > 0 ? "alert" : discovery.candidates.length > 0 ? "review_required" : "ok";
+    const status = discovery.errors.length > 0 ? "alert" : discoveredCandidates.length > 0 ? "review_required" : "ok";
     const code = discovery.errors.length > 0 ? "candidate_discovery_failed" :
-      discovery.candidates.length > 0 ? "candidate_review_required" : "no_candidate_found";
+      discoveredCandidates.length > 0 ? "candidate_review_required" : "no_candidate_found";
     await writeCandidateReport({
       status,
       code,
@@ -78,30 +81,51 @@ async function main(): Promise<void> {
   }
 
   phase = "collection";
-  const events = await collectEvents(configuration.approvedSourceUrls, {
-    ...networkOptions,
-    eventIds: configuration.eventIds,
-    overrides: configuration.overrides,
-  });
+  const publication = await preparePublication();
+  const previous = publication.existingDocument as EventsDocument | undefined;
+  if (previous !== undefined) validateDocument(previous);
+  const collection = await collectAutomaticEvents(configuration, discoveredCandidates, previous, new Date(), networkOptions);
+  const events = collection.events;
+  reviewCandidates = collection.reviewCandidates;
+  latestReviewCandidates = reviewCandidates;
   assertEventCollectionIsPublishable(events.length, process.env.ALLOW_EMPTY_EVENTS);
 
+  const readiness = assessNextEventReadiness(events, collection.reviewCandidates, new Date(), warningHours);
+  const hasDiscoveryFailure = discovery.errors.length > 0;
+  const hasCollectionFailure = collection.failures.length > 0;
+  const status = hasDiscoveryFailure || hasCollectionFailure ? "alert" : readiness.state;
+  const code = hasDiscoveryFailure ? "candidate_discovery_failed" :
+    hasCollectionFailure ? "candidate_collection_failed" : readiness.code;
+
   phase = "publication";
-  const publication = await preparePublication();
   const document: EventsDocument = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     dataVersion: publication.dataVersion,
     publishedAt: new Date().toISOString(),
     events,
+    collectionStatus: {
+      status: status === "ok" ? "ok" : "alert",
+      code,
+      ...((hasDiscoveryFailure || hasCollectionFailure) ? {
+        unavailableSources: [...new Set([...discovery.errors, ...collection.failures].map(error => error.url))].sort(),
+      } : {}),
+    },
   };
   validateDocument(document);
   if (dryRun) await writePreviewDocument(document);
   const changed = await publish(document, dryRun, publication);
+  const legacyOutput = process.env.LEGACY_OUTPUT_FILE?.trim();
+  if (legacyOutput) {
+    const legacyPublication = await preparePublication(globalThis.fetch, legacyOutput);
+    const legacyDocument: EventsDocument = {
+      schemaVersion: 1, dataVersion: legacyPublication.dataVersion,
+      publishedAt: document.publishedAt, events: legacyEvents(document),
+    };
+    validateDocument(legacyDocument);
+    await publish(legacyDocument, dryRun, legacyPublication, true);
+  }
 
   phase = "readiness_assessment";
-  const readiness = assessNextEventReadiness(events, discovery.candidates, new Date(), warningHours);
-  const hasDiscoveryFailure = discovery.errors.length > 0;
-  const status = hasDiscoveryFailure ? "alert" : readiness.state;
-  const code = hasDiscoveryFailure ? "candidate_discovery_failed" : readiness.code;
   await writeCandidateReport({
     status,
     code,
@@ -129,6 +153,8 @@ async function main(): Promise<void> {
     candidateCount: reviewCandidates.length,
     candidates: reviewCandidates,
     discoveryErrors: discovery.errors,
+    collectionErrors: collection.failures,
+    automaticSourceCount: collection.automaticSourceCount,
     nextEvent: readiness,
   });
 
@@ -200,17 +226,20 @@ function readInteger(name: string, defaultValue: number, minimum: number, maximu
   return value;
 }
 
-function addCandidateReviewGaps(
-  candidates: DiscoveryCandidate[],
-  configuration: ReturnType<typeof loadCollectorConfiguration>,
-): Array<DiscoveryCandidate & { stableEventId: string | null; reviewGaps: string[] }> {
-  return candidates.map(candidate => {
-    const stableEventId = configuration.eventIds[new URL(candidate.url).href] ?? null;
-    const reviewGaps = ["detail_fields_not_inspected"];
-    if (!stableEventId) reviewGaps.push("stable_event_id");
-    if (!stableEventId || !configuration.overrides.locations[stableEventId]) reviewGaps.push("location_override");
-    if (!stableEventId || !configuration.overrides.rewards[stableEventId]) reviewGaps.push("reward_override");
-    if (!stableEventId || !configuration.overrides.completion[stableEventId]) reviewGaps.push("completion_override");
-    return { ...candidate, stableEventId, reviewGaps };
+async function readSavedCandidates(configuration: ReturnType<typeof loadCollectorConfiguration>): Promise<DiscoveryCandidate[]> {
+  const path = process.env.CANDIDATE_OUTPUT_FILE?.trim();
+  if (!path) return [];
+  let content: string;
+  try { content = await readFile(path, "utf8"); }
+  catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") return [];
+    throw error;
+  }
+  const report = JSON.parse(content) as { schemaVersion?: unknown; candidates?: unknown };
+  if (report.schemaVersion !== 1 || !Array.isArray(report.candidates)) throw new Error("invalid saved candidate report");
+  return report.candidates.filter((candidate: DiscoveryCandidate) => {
+    const url = new URL(candidate.url);
+    return url.protocol === "https:" && configuration.allowedCandidateHosts.includes(url.hostname) &&
+      !configuration.ignoredCandidateUrls.includes(url.href) && !configuration.approvedSourceUrls.includes(url.href);
   });
 }

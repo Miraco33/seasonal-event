@@ -67,10 +67,11 @@ jobs:
             }
 
             const reasonByCode = {
-              candidate_review_required: "发现了新的官方季节活动专题，需要审核并补齐发布数据。",
+              candidate_review_required: "发现了官方活动专题，但尚不能核验标题或时间，需要补充资料。",
               event_ending_without_candidate: "当前活动即将结束，但尚未发现或批准下一场活动。",
               no_active_event_without_candidate: "当前没有开放活动，也没有待审核的下一活动。",
               candidate_discovery_failed: "官方活动公告检查失败，需要查看东京服务器上的最近运行状态。",
+              candidate_collection_failed: "部分官方活动资料读取或校验失败，已保留上次核验的数据。",
               run_failed: "采集或发布前校验失败，需要查看东京服务器上的最近运行状态。",
             };
             const titleByCode = {
@@ -78,9 +79,11 @@ jobs:
               event_ending_without_candidate: "【自动提醒】当前活动即将结束，尚未发现下一活动",
               no_active_event_without_candidate: "【自动提醒】当前无开放活动，尚未发现下一活动",
               candidate_discovery_failed: "【自动告警】官方活动公告检查失败",
+              candidate_collection_failed: "【自动告警】部分活动资料读取失败",
               run_failed: "【自动告警】季节活动采集运行失败",
             };
             const gapNames = {
+              required_title_or_time_not_verified: "核验活动标题和完整起止时间",
               detail_fields_not_inspected: "核对标题、时间、任务与 NPC",
               stable_event_id: "分配稳定活动 ID",
               location_override: "补充任务接取位置",
@@ -110,7 +113,7 @@ jobs:
                 lines.push(`- **${title || "未命名活动"}**：<${url}>`, `  - 待处理：${gaps}`);
               }
             }
-            lines.push("", "处理步骤见 `services/seasonal-event-collector/README.md` 的“下一活动审核流程”。状态恢复正常后，此 Issue 会自动关闭。");
+            lines.push("", "处理步骤见 `services/seasonal-event-collector/README.md` 的“发现、补充资料与待审核处理”。状态恢复正常后，此 Issue 会自动关闭。");
             const body = lines.join("\n");
             const title = titleByCode[report.code] || "【自动告警】季节活动采集需要处理";
 

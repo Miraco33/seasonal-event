@@ -306,7 +306,7 @@
 
     <section class="install-panel" aria-labelledby="install-heading">
       <h2 id="install-heading">游戏内在线安装</h2>
-      <p>在 <strong>/xlsettings → Experimental → Custom Plugin Repositories</strong> 中添加此地址，再到 <strong>/xlplugins</strong> 搜索 Seasonal Event。当前版本为 1.0.0。</p>
+      <p>在 <strong>/xlsettings → Experimental → Custom Plugin Repositories</strong> 中添加此地址，再到 <strong>/xlplugins</strong> 搜索 Seasonal Event。1.1.0 支持自动收录游戏内限时联动活动。</p>
       <div class="repo-link">
         <code id="repo-url">https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.json</code>
         <button id="copy-repo" type="button">复制仓库链接</button>
@@ -323,10 +323,18 @@
       </div>
     </section>
 
+    <section aria-labelledby="upcoming-heading">
+      <div class="section-head"><h2 id="upcoming-heading">即将开始</h2></div>
+      <div id="upcoming" class="events" aria-live="polite"></div>
+    </section>
+
     <footer>
       <span>数据仅供插件提醒使用</span>
       <a href="./events.json">查看 events.json</a>
       <a href="./events.schema.json">查看 JSON Schema</a>
+      <a href="./events-v2.json">查看完整活动数据 v2</a>
+      <a href="./events-v2.schema.json">查看 v2 JSON Schema</a>
+      <a href="./candidates.json">查看采集诊断</a>
       <a href="./repo.json">查看第三方仓库清单</a>
       <a href="https://github.com/Miraco33/seasonal-event">GitHub 仓库</a>
     </footer>
@@ -361,7 +369,7 @@
       }
     }
 
-    function createEventCard(event) {
+    function createEventCard(event, upcoming = false) {
       const card = document.createElement("article");
       card.className = "event-card";
 
@@ -376,7 +384,7 @@
       heading.append(title, time);
       const tag = document.createElement("span");
       tag.className = "tag";
-      tag.textContent = "进行中";
+      tag.textContent = upcoming ? "即将开始" : "进行中";
       top.append(heading, tag);
       card.append(top);
 
@@ -387,8 +395,13 @@
       const npc = document.createElement("span");
       npc.textContent = `接取 NPC：${event.questNpc || "待确认"}`;
       const rewards = document.createElement("span");
-      rewards.textContent = `奖励：${Array.isArray(event.rewards) ? event.rewards.length : 0} 项`;
+      rewards.textContent = event.rewards?.length ? `奖励：${event.rewards.length} 项` : "奖励：官网信息尚未提取";
       details.append(quest, npc, rewards);
+      if (!event.location) {
+        const map = document.createElement("span");
+        map.textContent = "接取坐标尚未核验，插件地图按钮不可用";
+        details.append(map);
+      }
       card.append(details);
 
       const sourceUrl = safeSourceUrl(event.sourceUrl);
@@ -410,10 +423,10 @@
       const container = document.getElementById("events");
 
       try {
-        const response = await fetch("./events.json", { cache: "no-cache" });
+        const response = await fetch("./events-v2.json", { cache: "no-cache" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        if (data.schemaVersion !== 1 || !Array.isArray(data.events)) {
+        if (data.schemaVersion !== 2 || !Array.isArray(data.events)) {
           throw new Error("不支持的数据格式");
         }
 
@@ -426,18 +439,24 @@
           })
           .sort((a, b) => Date.parse(a.endAt) - Date.parse(b.endAt));
 
-        state.textContent = "数据可读取";
-        state.classList.add("ok");
+        const collectionAlert = data.collectionStatus?.status === "alert";
+        state.textContent = collectionAlert ? "采集有告警，列表可能不完整" : "数据可读取";
+        state.classList.toggle("ok", !collectionAlert);
         setText("active-count", `${active.length} 个`);
         setText("version", `v${data.dataVersion} / schema ${data.schemaVersion}`);
         setText("published", formatDate(data.publishedAt));
         setText("total-count", `共收录 ${data.events.length} 个活动`);
 
         container.replaceChildren();
+        const upcomingContainer = document.getElementById("upcoming");
+        const upcoming = data.events.filter(event => Date.parse(event.startAt) > now).sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt));
+        upcomingContainer.replaceChildren();
+        for (const event of upcoming) upcomingContainer.append(createEventCard(event, true));
+        if (upcoming.length === 0) upcomingContainer.textContent = "暂无已核验的预告活动。";
         if (active.length === 0) {
           const empty = document.createElement("div");
           empty.className = "message";
-          empty.textContent = "当前没有正在进行的季节活动。";
+          empty.textContent = collectionAlert ? "已收录列表中没有开放活动，采集有告警，请查看官网确认。" : "已收录列表中没有正在进行的活动。";
           container.append(empty);
           return;
         }

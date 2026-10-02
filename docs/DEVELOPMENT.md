@@ -4,13 +4,13 @@
 
 ## 在线安装
 
-当前版本为 1.0.0 正式版。在游戏中打开 `/xlsettings`，进入 **Experimental**，将下面的地址加入 **Custom Plugin Repositories** 并保存：
+当前版本为 1.1.0。在游戏中打开 `/xlsettings`，进入 **Experimental**，将下面的地址加入 **Custom Plugin Repositories** 并保存：
 
 ```text
 https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.json
 ```
 
-随后在 `/xlplugins` 的可安装插件中搜索 `Seasonal Event`。第三方仓库清单会从 GitHub Release 下载与清单版本一致的插件 ZIP；状态页、`events.json` 和 Schema 都不是插件安装地址。
+随后在 `/xlplugins` 的可安装插件中搜索 `Seasonal Event`。第三方仓库清单会从 GitHub Release 下载与清单版本一致的插件 ZIP；状态页、活动 JSON 和 Schema 都不是插件安装地址。
 
 ## 构建
 
@@ -25,11 +25,11 @@ https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.j
 
 ## 产品边界
 
-- 只收录国服游戏内、可接任务并能获得道具奖励的传统季节活动。
+- 收录国服游戏内、可接任务的传统季节活动和限时联动，包含 FF15、妖怪手表及糖豆人。
 - 不收录官网抽奖、充值、商城、社区活动、莫古力日随或其他纯运营活动。
 - 国服专属但具备游戏内任务、剧情、奖励或成就的季节活动可以收录。
 - 只在活动已经开始且尚未结束时提醒；未开始和已过期活动不提示。
-- 只展示任务接取 NPC 的地图旗标，不处理活动商店、兑换地点或副本入口。
+- 只展示已核验的任务接取 NPC 地图旗标，不处理活动商店、兑换地点或副本入口；缺少世界坐标时禁用地图按钮。
 - Teleporter 联动为可选功能；只有活动数据提供传送目标且 Teleporter 可用时才显示传送按钮，未安装前置插件时仍保留地图旗标功能。
 
 ## 用户可见行为
@@ -40,7 +40,9 @@ https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.j
 
 活动完成状态优先使用稳定的任务 ID 判断，并以成就状态作为补充。游戏尚未发送完整成就列表且数据没有任务 ID 时，插件仍会显示活动和提醒，同时明确标注完成状态暂时未知，避免活动被永久静默。没有稳定任务或成就映射时，用户可以在完成后忽略该活动。
 
-插件默认从 GitHub Pages 的公开 HTTPS 地址 [`events.json`](https://miraco33.github.io/seasonal-event/events.json) 获取数据。用户可以在 `/seasonalevent` 窗口的“数据源设置”中改用其他兼容地址，再点击“保存并刷新”。从开发版占位地址或 GitHub Raw 地址升级的既有配置会自动迁移到 Pages 地址；用户自行填写的其他数据源保持不变。
+1.1.0 默认从 GitHub Pages 的公开 HTTPS 地址 [`events-v2.json`](https://miraco33.github.io/seasonal-event/events-v2.json) 获取数据。用户可以在 `/seasonalevent` 窗口的“数据源设置”中改用其他兼容地址，再点击“保存并刷新”。开发版占位地址、旧官方 GitHub Raw 地址和旧官方 Pages `events.json` 地址会自动迁移到 v2；用户自行填写的其他数据源及角色状态保持不变。客户端同时接受 schema 1 的完整数据和 schema 2 的部分资料，不把已提供但无效的字段当作缺失字段。
+
+schema 2 中未知的任务名称、NPC 和地点可为 `null`，尚未提取的奖励可为 `[]`。这些缺口在窗口中明确显示；地图缺失时不能打开旗标，奖励为空时引导查看官网。活动的标题、起止时间和 HTTPS 来源仍必须可靠。`collectionStatus.status=alert` 会显示“当前列表可能不完整”，空列表不会被静默解释为官网没有活动。
 
 ## 时间规则
 
@@ -72,7 +74,7 @@ https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.j
 
 ### 2. 公共静态数据源
 
-当前使用 GitHub Pages 发布 [`events.json`](https://miraco33.github.io/seasonal-event/events.json) 和 [`events.schema.json`](https://miraco33.github.io/seasonal-event/events.schema.json)，状态页位于 [`https://miraco33.github.io/seasonal-event/`](https://miraco33.github.io/seasonal-event/)。发布工作流将 `site/` 与 `data/seasonal-event/` 中的两个 JSON 文件组合到 Pages 根目录。
+GitHub Pages 发布新版 [`events-v2.json`](https://miraco33.github.io/seasonal-event/events-v2.json) 和对应的 `events-v2.schema.json`，同时保留 [`events.json`](https://miraco33.github.io/seasonal-event/events.json) 与 [`events.schema.json`](https://miraco33.github.io/seasonal-event/events.schema.json)。旧文件只含符合 schema 1 完整要求的活动子集，让 1.0.0 客户端继续读取；地图、任务或奖励尚不完整的活动只出现在 v2。状态页位于 [`https://miraco33.github.io/seasonal-event/`](https://miraco33.github.io/seasonal-event/)，公开呈现候选及采集告警。发布工作流把 `site/` 与这些公共数据文件组合到 Pages 根目录。
 
 数据源只保存公共活动资料，不保存角色、账号或反馈隐私信息。插件使用 HTTPS、缓存和 ETag，网络失败时继续使用本地缓存。
 
@@ -80,7 +82,9 @@ https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.j
 
 ### 3. 活动采集与标准化服务
 
-定时读取盛趣官网和辅助资料，执行动态页面脚本，提取活动时间、任务、NPC、奖励 tooltip 和坐标，转换成统一 JSON 后发布到第二层。
+定时读取盛趣新闻和活动专题，执行动态页面脚本，提取活动时间、任务、NPC、奖励 tooltip 和坐标，转换成统一 JSON 后发布到第二层。发现范围为最近 180 天的有界分页，识别传统季节活动及明确的游戏内限时联动。新来源默认使用规范化专题 URL 的哈希作为稳定活动 ID；已存在的 ID 映射保持不变。
+
+标题、活动时间和官方 HTTPS 来源通过校验后，采集器自动发布已提取资料。缺地图或奖励不会阻断整场活动；未知字段保留为未知。标题或时间仍无法核验的专题进入待审核报告。已经发布且仍开放或尚未开始的活动持续追踪公告与专题，不因原公告离开发现窗口而丢失。单个来源失败时保留该来源上次已核验活动，并在 v2 中发布采集告警。
 
 该服务可以：
 
@@ -90,7 +94,35 @@ https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.j
 
 采集服务与插件分离，网页解析、OCR、异常重试和历史数据整理不进入插件端。
 
-## 推荐活动数据字段
+## 活动数据字段
+
+新版文档使用 `schemaVersion: 2`，活动可以只提供可靠的核心资料；例如：
+
+```json
+{
+  "schemaVersion": 2,
+  "dataVersion": 1,
+  "publishedAt": "2026-10-02T00:00:00+08:00",
+  "collectionStatus": { "status": "ok", "code": "healthy" },
+  "events": [
+    {
+      "id": "seasonal-example",
+      "title": "已核验的活动标题",
+      "startAt": "2026-10-07T16:00:00+08:00",
+      "endAt": "2026-10-27T23:00:00+08:00",
+      "questName": null,
+      "questLevel": null,
+      "questNpc": null,
+      "location": null,
+      "rewards": [],
+      "sourceUrl": "https://actff1.web.sdo.com/",
+      "lastVerifiedAt": "2026-10-02T00:00:00+08:00"
+    }
+  ]
+}
+```
+
+这是字段结构示例，不是发布活动。资料补齐后可包含以下完整字段；schema 1 仍要求非空任务、NPC、有效世界坐标和至少一项奖励：
 
 ```json
 {
@@ -131,7 +163,7 @@ https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.j
 
 奖励悬浮卡片通常可以通过页面 DOM、JS 数据或浏览器执行后的 tooltip 自动读取。坐标若存在于页面结构化数据中也可以自动读取；若只存在于地图图片中，则需要 OCR 或异常时人工确认。
 
-采集流程应支持“自动采集、自动校验、异常不发布”。官网解析失败不能被静默解释为“没有活动”。每条数据保留来源和最后验证时间，便于追踪错误。
+采集流程按字段校验：可靠核心资料自动发布，未知字段明确保留，已提供的错误字段拒绝发布。官网解析失败不能被静默解释为“没有活动”；应保留上次已核验资料并暴露告警。每条数据保留来源和最后验证时间，便于追踪错误。`announcementUrl` 可保存官方公告 API 来源，客户端的“查看官网”打开活动专题 `sourceUrl`。
 
 ## 部署和成本判断
 
@@ -149,7 +181,21 @@ https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.j
 
 2026-09-05 已在兼容的 Dalamud 环境中手动验证第三方仓库安装与加载、登录提醒、远程数据刷新、成就完成识别和任务地图旗标。诊断信息显示数据源、缓存、最近刷新、数据版本和错误状态均正常；完成活动后，数据源中的活动仍保留，但客户端能够正确将其从待办列表中排除。
 
-尚未完成的游戏内检查只剩忽略/恢复，以及活动数据提供传送目标时的 Teleporter IPC。当前活动数据没有传送目标，地图旗标功能已经验证；采集器的具体运行与 Docker/Oracle 部署步骤见 `services/seasonal-event-collector/README.md`。
+上述 2026-09-05 检查针对旧版完整资料，不覆盖 1.1.0。新版本尚需在游戏内验证官方数据源迁移、部分资料显示、无坐标地图禁用、采集告警、官网按钮、多个同时开放活动、忽略/恢复及可选 Teleporter IPC。无游戏测试可以核验 JSON 兼容和校验、解析器、发现规则、保留旧资料及发布边界；不能代替 UI 和游戏 API 实测。具体采集与 Docker/Oracle 部署步骤见 `services/seasonal-event-collector/README.md`。
+
+1.1.0 的无游戏验证已通过：92 项采集器检查、39 项客户端校验、6 轮实时官网验收和 21 个历史专题兼容检查。工作区编译与 Release 打包、版本一致性和 ZIP 结构检查也已通过。用户已授权按这些结果发布，游戏内 UI 和 API 行为留待后续实测。
+
+无游戏自动化验证入口：
+
+```powershell
+dotnet run --project tests/client-validation -c Release
+cd services/seasonal-event-collector
+npm run build
+npm test
+node scripts/verify-live.mjs --rounds=3
+```
+
+客户端验证项目只链接模型与纯校验逻辑，不加载游戏。实时官网验收连续读取三轮，用于确认实际公告与专题模板；不执行正式发布。若本机使用固定 SDK，可将 `dotnet` 替换为该 SDK 的绝对路径。Playwright 浏览器路径按采集器 README 设置；不应为验证修改锁文件或升级共享依赖。
 
 ## 自定义仓库发布流程
 
@@ -158,7 +204,7 @@ https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.j
 1. 同步 `SeasonalEvent.csproj` 的三个版本字段、`seasonalevent.json`、`repo.json` 的版本和更新说明；新版本必须高于已发布版本。更新 `repo.json` 的下载地址与 `LastUpdate`。
 2. 更新用户说明，执行 `build.ps1 -Mode Release`。核对 ZIP 根目录只有插件 DLL、插件清单和 deps.json，且版本一致。
 3. 提交并创建对应 Git 标签。先推标签，创建普通 GitHub Release 并上传 `seasonalevent.zip`；核对公开下载内容与本地 SHA-256 一致。
-4. 安装包可下载后再推送 `main`，让固定仓库地址与 GitHub Pages 指向新版本。检查 Pages、数据和相关 Actions。
-5. 验证全新安装目录与旧版覆盖升级的包结构和配置兼容性；游戏内安装、加载及升级结果须另行实测。不得用包校验代替游戏内验证。
+4. 若同时升级云端采集器，在推送 `main` 前暂停其独立定时器并确认采集任务没有运行。安装包可下载后再推送 `main`，让固定仓库地址与 GitHub Pages 指向新版本。检查 Pages、数据和相关 Actions，再按 Oracle 部署规范更新镜像、验证并恢复原定时器状态。
+5. 验证全新安装目录与旧版覆盖升级的包结构和配置兼容性，记录自动化范围和后续游戏内验证项。游戏内安装、加载及升级结果须另行实测，单独记录结果。
 
-1.0.0 沿用 0.1.1 的客户端逻辑和配置格式；忽略/恢复与可选传送按维护者决定留待后续活动验证。公开分发地址保持不变：`https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.json`。
+云端采集器在获得部署批准后同步代码、重建镜像并验证 dry-run，再运行正式发布流程；定时任务不会自动重建镜像。升级期间应按 Oracle 部署规范暂停独立采集器定时器，确认没有运行中的采集任务，避免新代码与旧镜像混用。公开分发地址保持不变：`https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.json`。

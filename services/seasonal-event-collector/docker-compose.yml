@@ -8,6 +8,8 @@ services:
       CANDIDATE_OUTPUT_FILE: /app/output/candidates.json
       PREVIEW_OUTPUT_FILE: /app/output/preview.json
       STATUS_OUTPUT_FILE: /app/output/status.json
+      OUTPUT_FILE: /app/output/events-v2.json
+      LEGACY_OUTPUT_FILE: /app/output/events.json
     volumes:
       - ./config:/app/config:ro
       - ./output:/app/output

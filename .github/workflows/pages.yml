@@ -10,6 +10,9 @@ on:
       - repo.json
       - data/seasonal-event/events.json
       - data/seasonal-event/events.schema.json
+      - data/seasonal-event/events-v2.json
+      - data/seasonal-event/events-v2.schema.json
+      - data/seasonal-event/candidates.json
   workflow_dispatch:
 
 permissions:
@@ -41,6 +44,9 @@ jobs:
           cp -R site/. _site/
           cp data/seasonal-event/events.json _site/events.json
           cp data/seasonal-event/events.schema.json _site/events.schema.json
+          cp data/seasonal-event/events-v2.json _site/events-v2.json
+          cp data/seasonal-event/events-v2.schema.json _site/events-v2.schema.json
+          cp data/seasonal-event/candidates.json _site/candidates.json
           cp repo.json _site/repo.json
           touch _site/.nojekyll
 

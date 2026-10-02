@@ -5,7 +5,7 @@
   "required": ["schemaVersion", "dataVersion", "publishedAt", "events"],
   "properties": {
     "schemaVersion": { "const": 1 },
-    "dataVersion": { "type": "integer", "minimum": 1 },
+    "dataVersion": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
     "publishedAt": { "type": "string", "format": "date-time" },
     "events": {
       "type": "array",
@@ -22,15 +22,15 @@
         "startAt": { "type": "string", "format": "date-time" },
         "endAt": { "type": "string", "format": "date-time" },
         "questName": { "type": "string", "minLength": 1 },
-        "questLevel": { "type": ["integer", "null"], "minimum": 1 },
+        "questLevel": { "type": ["integer", "null"], "minimum": 1, "maximum": 2147483647 },
         "questNpc": { "type": "string", "minLength": 1 },
-        "questId": { "type": ["integer", "null"], "minimum": 1 },
+        "questId": { "type": ["integer", "null"], "minimum": 1, "maximum": 4294967295 },
         "location": {
           "type": "object",
           "required": ["territoryId", "mapId", "x", "y", "z"],
           "properties": {
-            "territoryId": { "type": "integer", "minimum": 1 },
-            "mapId": { "type": "integer", "minimum": 1 },
+            "territoryId": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
+            "mapId": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
             "x": { "type": "number" },
             "y": { "type": "number" },
             "z": { "type": "number" },
@@ -39,12 +39,12 @@
           },
           "additionalProperties": false
         },
-        "achievementId": { "type": ["integer", "null"], "minimum": 1 },
+        "achievementId": { "type": ["integer", "null"], "minimum": 1, "maximum": 4294967295 },
         "teleport": {
           "type": ["object", "null"],
           "required": ["aetheryteId", "subIndex"],
           "properties": {
-            "aetheryteId": { "type": "integer", "minimum": 1 },
+            "aetheryteId": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
             "subIndex": { "type": "integer", "minimum": 0, "maximum": 255 }
           },
           "additionalProperties": false
