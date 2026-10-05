@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 3,
-  "publishedAt": "2026-10-02T15:52:34.240Z",
+  "dataVersion": 4,
+  "publishedAt": "2026-10-05T18:29:06.336Z",
   "events": [
     {
       "id": "seasonal-58653ee55805",
@@ -16,229 +16,8 @@
       "achievementId": null,
       "rewards": [],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260915ffxv/index.html",
-      "lastVerifiedAt": "2026-10-02T15:52:32.849Z",
+      "lastVerifiedAt": "2026-10-05T18:28:50.886Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393210"
-    },
-    {
-      "id": "seasonal-93e9ae835e8e",
-      "title": "妖怪手表 艾欧泽亚大集合啦喵！ 2026",
-      "startAt": "2026-08-04T16:00:00+08:00",
-      "endAt": "2026-10-05T23:00:00+08:00",
-      "questName": null,
-      "questLevel": null,
-      "questNpc": null,
-      "questId": null,
-      "location": null,
-      "achievementId": null,
-      "rewards": [
-        {
-          "name": "地缚猫",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "小狛",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "USA蹦",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "维斯帕",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "武士猫",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "浮游猫",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "狛次郎",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "野槌蛇",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "大蛇",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "九尾",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "机器猫F型",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "吹雪公主",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "人面犬",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "阎魔",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "蛇王凯拉",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "滑头鬼",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "百鬼公主",
-          "category": "宠物",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "百斩斧·赤猫",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "白犬杖",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "宇宙拳套",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "智者大弓",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "妖刀・猫丸 圆阵猫盾",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "同田贯·冬猫",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "朱犬之书",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "幸运天球仪",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "蛇枪・鸦丸",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "九尾双剑",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "Ｆ型波动炮",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "雪姫杖",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "凭依教典",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "阎魔枪刃",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "蛇王刺剑",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "怪刀·浮世丸",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "百鬼圆阵",
-          "category": "武器",
-          "description": "",
-          "flags": []
-        }
-      ],
-      "sourceUrl": "https://actff1.web.sdo.com/project/20260715youkai-watch/vaz1gqm16a3h/index.html",
-      "lastVerifiedAt": "2026-10-02T15:52:30.437Z",
-      "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=391316"
     },
     {
       "id": "seasonal-aae61e8dfaea",
@@ -336,7 +115,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-10-02T15:52:22.467Z"
+      "lastVerifiedAt": "2026-10-05T18:28:57.461Z"
     },
     {
       "id": "seasonal-c5a1b1e9df45",
@@ -490,7 +269,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
-      "lastVerifiedAt": "2026-10-02T15:52:34.048Z",
+      "lastVerifiedAt": "2026-10-05T18:28:53.836Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393660"
     }
   ],
