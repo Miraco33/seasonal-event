@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 4,
-  "publishedAt": "2026-10-05T18:29:06.336Z",
+  "dataVersion": 5,
+  "publishedAt": "2026-10-07T12:27:31.031Z",
   "events": [
     {
       "id": "seasonal-58653ee55805",
@@ -16,7 +16,7 @@
       "achievementId": null,
       "rewards": [],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260915ffxv/index.html",
-      "lastVerifiedAt": "2026-10-05T18:28:50.886Z",
+      "lastVerifiedAt": "2026-10-07T12:27:20.196Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393210"
     },
     {
@@ -115,7 +115,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-10-05T18:28:57.461Z"
+      "lastVerifiedAt": "2026-10-07T12:27:24.183Z"
     },
     {
       "id": "seasonal-c5a1b1e9df45",
@@ -269,12 +269,12 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
-      "lastVerifiedAt": "2026-10-05T18:28:53.836Z",
+      "lastVerifiedAt": "2026-10-07T12:27:21.831Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393660"
     }
   ],
   "collectionStatus": {
-    "status": "ok",
-    "code": "healthy"
+    "status": "alert",
+    "code": "event_ending_without_candidate"
   }
 }
