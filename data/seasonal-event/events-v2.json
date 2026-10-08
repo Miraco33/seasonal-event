@@ -1,8 +1,24 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 5,
-  "publishedAt": "2026-10-07T12:27:31.031Z",
+  "dataVersion": 6,
+  "publishedAt": "2026-10-08T12:29:33.175Z",
   "events": [
+    {
+      "id": "seasonal-090dc058eda9",
+      "title": "守护天节与奇妙的人偶们",
+      "startAt": "2026-10-15T16:00:00+08:00",
+      "endAt": "2026-11-02T23:00:00+08:00",
+      "questName": "守护天节与奇妙的人偶们",
+      "questLevel": 15,
+      "questNpc": "南瓜头女人",
+      "questId": null,
+      "location": null,
+      "achievementId": null,
+      "rewards": [],
+      "sourceUrl": "https://actff1.web.sdo.com/project/20261005All_Saints_Wake/hjwff6jkcti4/index.html",
+      "lastVerifiedAt": "2026-10-08T12:29:33.109Z",
+      "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393960"
+    },
     {
       "id": "seasonal-58653ee55805",
       "title": "最终幻想XIV x 最终幻想XV 「献给英雄的夜曲」",
@@ -16,7 +32,7 @@
       "achievementId": null,
       "rewards": [],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260915ffxv/index.html",
-      "lastVerifiedAt": "2026-10-07T12:27:20.196Z",
+      "lastVerifiedAt": "2026-10-08T12:29:21.290Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393210"
     },
     {
@@ -115,7 +131,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-10-07T12:27:24.183Z"
+      "lastVerifiedAt": "2026-10-08T12:29:25.282Z"
     },
     {
       "id": "seasonal-c5a1b1e9df45",
@@ -269,12 +285,12 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
-      "lastVerifiedAt": "2026-10-07T12:27:21.831Z",
+      "lastVerifiedAt": "2026-10-08T12:29:23.110Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393660"
     }
   ],
   "collectionStatus": {
-    "status": "alert",
-    "code": "event_ending_without_candidate"
+    "status": "ok",
+    "code": "healthy"
   }
 }
