@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 6,
-  "publishedAt": "2026-10-08T12:29:33.175Z",
+  "dataVersion": 7,
+  "publishedAt": "2026-10-09T07:48:55.906Z",
   "events": [
     {
       "id": "seasonal-090dc058eda9",
@@ -11,12 +11,20 @@
       "questName": "守护天节与奇妙的人偶们",
       "questLevel": 15,
       "questNpc": "南瓜头女人",
-      "questId": null,
-      "location": null,
-      "achievementId": null,
+      "questId": 71004,
+      "location": {
+        "territoryId": 133,
+        "mapId": 3,
+        "x": -50,
+        "y": 6.5,
+        "z": -88.39559936523438,
+        "displayX": 10.2,
+        "displayY": 9.4
+      },
+      "achievementId": 3945,
       "rewards": [],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261005All_Saints_Wake/hjwff6jkcti4/index.html",
-      "lastVerifiedAt": "2026-10-08T12:29:33.109Z",
+      "lastVerifiedAt": "2026-10-09T07:48:38.198Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393960"
     },
     {
@@ -27,12 +35,141 @@
       "questName": "黑衣青年",
       "questLevel": 50,
       "questNpc": "琪琵·嘉奇亚",
-      "questId": null,
-      "location": null,
-      "achievementId": null,
-      "rewards": [],
+      "questId": 68696,
+      "location": {
+        "territoryId": 130,
+        "mapId": 13,
+        "x": -132.445,
+        "y": 3.98254,
+        "z": -75.0313,
+        "displayX": 8.5,
+        "displayY": 9.7
+      },
+      "achievementId": 2241,
+      "rewards": [
+        {
+          "name": "路西斯王子的外套",
+          "category": "身体防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "路西斯王子的半指手套",
+          "category": "手部防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "路西斯王子的打底裤",
+          "category": "腿部防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "路西斯王子的皮靴",
+          "category": "脚部防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "雷迦利亚G型取车证",
+          "category": "其他",
+          "description": "获得新坐骑。\r\n雷迦利亚G型的取车证明。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "发型样式：诺克提斯",
+          "category": "杂货",
+          "description": "上面记载着特殊的发型。\r\n使用后可在美容师那里选择此发型。\r\n硌狮族除外",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "九宫幻卡：诺克提斯·路西斯·切拉姆",
+          "category": "九宫幻卡",
+          "description": "九宫幻卡对局时所用的卡片。\r\n编号外14\r\n稀有度：★★★★★",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：锤头鲨",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«锤头鲨»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：幻想圆舞曲",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«幻想圆舞曲»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：休息与反省",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«休息与反省»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：黑暗遮蔽",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«黑暗遮蔽»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：夜之启示",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«夜之启示»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：快速加油",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«快速加油»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        }
+      ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260915ffxv/index.html",
-      "lastVerifiedAt": "2026-10-08T12:29:21.290Z",
+      "lastVerifiedAt": "2026-10-09T07:48:42.884Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393210"
     },
     {
@@ -131,7 +268,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-10-08T12:29:25.282Z"
+      "lastVerifiedAt": "2026-10-09T07:48:49.401Z"
     },
     {
       "id": "seasonal-c5a1b1e9df45",
@@ -140,9 +277,17 @@
       "endAt": "2026-10-27T23:00:00+08:00",
       "questName": "抓紧胜利的王冠！",
       "questLevel": 15,
-      "questNpc": null,
-      "questId": null,
-      "location": null,
+      "questNpc": "莱维娜",
+      "questId": 70337,
+      "location": {
+        "territoryId": 144,
+        "mapId": 196,
+        "x": -65.3643,
+        "y": 0.0697914,
+        "z": 0.811196,
+        "displayX": 4.8,
+        "displayY": 6.1
+      },
       "achievementId": null,
       "rewards": [
         {
@@ -285,7 +430,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
-      "lastVerifiedAt": "2026-10-08T12:29:23.110Z",
+      "lastVerifiedAt": "2026-10-09T07:48:47.113Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393660"
     }
   ],

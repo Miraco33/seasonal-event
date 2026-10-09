@@ -1,8 +1,152 @@
 {
   "schemaVersion": 1,
-  "dataVersion": 2,
-  "publishedAt": "2026-09-04T09:04:03+08:00",
+  "dataVersion": 3,
+  "publishedAt": "2026-10-09T07:48:55.906Z",
   "events": [
+    {
+      "id": "seasonal-58653ee55805",
+      "title": "最终幻想XIV x 最终幻想XV 「献给英雄的夜曲」",
+      "startAt": "2026-09-24T16:00:00+08:00",
+      "endAt": "2026-10-13T23:00:00+08:00",
+      "questName": "黑衣青年",
+      "questLevel": 50,
+      "questNpc": "琪琵·嘉奇亚",
+      "questId": 68696,
+      "location": {
+        "territoryId": 130,
+        "mapId": 13,
+        "x": -132.445,
+        "y": 3.98254,
+        "z": -75.0313,
+        "displayX": 8.5,
+        "displayY": 9.7
+      },
+      "achievementId": 2241,
+      "rewards": [
+        {
+          "name": "路西斯王子的外套",
+          "category": "身体防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "路西斯王子的半指手套",
+          "category": "手部防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "路西斯王子的打底裤",
+          "category": "腿部防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "路西斯王子的皮靴",
+          "category": "脚部防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "雷迦利亚G型取车证",
+          "category": "其他",
+          "description": "获得新坐骑。\r\n雷迦利亚G型的取车证明。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "发型样式：诺克提斯",
+          "category": "杂货",
+          "description": "上面记载着特殊的发型。\r\n使用后可在美容师那里选择此发型。\r\n硌狮族除外",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "九宫幻卡：诺克提斯·路西斯·切拉姆",
+          "category": "九宫幻卡",
+          "description": "九宫幻卡对局时所用的卡片。\r\n编号外14\r\n稀有度：★★★★★",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：锤头鲨",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«锤头鲨»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：幻想圆舞曲",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«幻想圆舞曲»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：休息与反省",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«休息与反省»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：黑暗遮蔽",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«黑暗遮蔽»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：夜之启示",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«夜之启示»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：快速加油",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«快速加油»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        }
+      ],
+      "sourceUrl": "https://actff1.web.sdo.com/project/20260915ffxv/index.html",
+      "lastVerifiedAt": "2026-10-09T07:48:42.884Z"
+    },
     {
       "id": "seasonal-aae61e8dfaea",
       "title": "新生庆典与音乐的轨迹",
@@ -18,7 +162,7 @@
         "x": -9.61439,
         "y": 39.9998,
         "z": 82.0985,
-        "displayX": 11.0,
+        "displayX": 11,
         "displayY": 12.8
       },
       "achievementId": 3875,
@@ -27,47 +171,241 @@
           "name": "迷你乌克·拉玛特",
           "category": "宠物",
           "description": "获得新宠物“迷你乌克·拉玛特”。以图莱尤拉联合王国的公主乌克·拉玛特为原型制作的魔法人偶。你跟我走一趟吧，到图莱尤拉来！",
-          "flags": ["珍稀", "独占", "不可出售", "不可在市场出售"]
+          "flags": [
+            "珍稀",
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
         },
         {
           "name": "新生庆典桌面海报2025-2",
           "category": "桌上",
           "description": "描绘了新生庆典情景的绘画作品，可以装饰在桌上。",
-          "flags": ["独占", "不可出售", "不可在市场出售"]
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
         },
         {
           "name": "新生庆典海报2025-2",
           "category": "壁挂",
           "description": "描绘了新生庆典情景的绘画作品。",
-          "flags": ["独占", "不可出售", "不可在市场出售"]
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
         },
         {
           "name": "新生庆典海报2025",
           "category": "壁挂",
           "description": "描绘了新生庆典情景的绘画作品。",
-          "flags": ["独占", "不可出售", "不可在市场出售"]
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
         },
         {
           "name": "管弦乐琴乐谱：主题曲 ～ 玛托雅的洞穴（转调版）",
           "category": "管弦乐琴乐谱",
           "description": "在管弦乐琴乐谱集中加入谱有«主题曲 ～ 玛托雅的洞穴（转调版）»旋律的管弦乐琴乐谱。",
-          "flags": ["珍稀", "独占", "不可出售", "不可在市场出售"]
+          "flags": [
+            "珍稀",
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
         },
         {
           "name": "管弦乐琴乐谱：悠久之风（转调版）",
           "category": "管弦乐琴乐谱",
           "description": "在管弦乐琴乐谱集中加入谱有«悠久之风（转调版）»旋律的管弦乐琴乐谱。",
-          "flags": ["珍稀", "独占", "不可出售", "不可在市场出售"]
+          "flags": [
+            "珍稀",
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
         },
         {
           "name": "管弦乐琴乐谱：在札纳尔坎德（转调版）",
           "category": "管弦乐琴乐谱",
           "description": "在管弦乐琴乐谱集中加入谱有«在札纳尔坎德（转调版）»旋律的管弦乐琴乐谱。",
-          "flags": ["珍稀", "独占", "不可出售", "不可在市场出售"]
+          "flags": [
+            "珍稀",
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-09-04T09:04:03+08:00"
+      "lastVerifiedAt": "2026-10-09T07:48:49.401Z"
+    },
+    {
+      "id": "seasonal-c5a1b1e9df45",
+      "title": "最终幻想14 × Fall Guys 联动活动",
+      "startAt": "2026-10-07T16:00:00+08:00",
+      "endAt": "2026-10-27T23:00:00+08:00",
+      "questName": "抓紧胜利的王冠！",
+      "questLevel": 15,
+      "questNpc": "莱维娜",
+      "questId": 70337,
+      "location": {
+        "territoryId": 144,
+        "mapId": 196,
+        "x": -65.3643,
+        "y": 0.0697914,
+        "z": 0.811196,
+        "displayX": 4.8,
+        "displayY": 6.1
+      },
+      "achievementId": null,
+      "rewards": [
+        {
+          "name": "糖豆人针织帽",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "糖豆人卫衣",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "糖豆人打底裤",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "糖豆人运动鞋",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "哑光胜者王冠",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "闪亮胜者王冠",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "糖豆犀牛认证密钥",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "演技教材·大获全胜",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "粉红糖豆人",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "糖豆企鹅",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心胜者王冠",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心装饰旗",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心甜甜圈障碍柱",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心填充墙",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心彩虹柱",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟巨豆中心巨锤",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：快快落落糖豆人",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "肖像教材：金碟巨豆中心1",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "肖像教材：金碟巨豆中心2",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "肖像教材：金碟巨豆中心3",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "民用营养学指南",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "金碟游乐场传送网使用券",
+          "category": "",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "追加染剂1",
+          "category": "",
+          "description": "",
+          "flags": []
+        }
+      ],
+      "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
+      "lastVerifiedAt": "2026-10-09T07:48:47.113Z"
     }
   ]
 }
