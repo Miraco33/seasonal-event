@@ -171,7 +171,7 @@ GitHub Pages 发布新版 [`events-v2.json`](https://miraco33.github.io/seasonal
 
 `config/verified-quests.json` 保留 FF15 和糖豆的人工交叉核验资料及 FF15 的 13 项物品，按任务名和官方专题路径关键词唯一匹配，显式人工覆盖仍优先。该兼容目录可用于同任务复刻，但不能把目录回填称为新图片识别成功。游戏更新后目录和索引均需重新提取核验；Excel 表校验和不兼容时停止。离线原始报告位于被 Git 忽略的 `output/game-data-verification.json`，生产只读取版本化目录与索引，不动态读取本机游戏文件或报告，云端无需安装游戏。提取步骤见 `services/seasonal-event-collector/tools/game-data/README.md`。
 
-OCR 的运行配置为 `OCR_EXECUTABLE_PATH`、`OCR_TESSDATA_DIR` 和可选 `OCR_CACHE_DIR`。Linux 独立容器安装免费系统 OCR 及模型；Windows 本地验证使用被忽略的 `output/` 下专用轻量中英文模型，合计约 6.3 MiB，不修改共享安装模型。Oracle Compose 起始限制为 0.5 CPU、768 MiB，OCR 每进程限一个线程；ARM64 冷缓存耗时及峰值内存待获准部署后的 dry-run 实测，可据结果调整。项目结果缓存最多 32 文件、单文件 2 MiB、合计 32 MiB，默认由宿主机 `status/ocr-cache` 独立持久挂载到 `/app/ocr-cache`，新增前淘汰较旧结果，不受状态 staging 覆盖和清理影响。诊断先写 staging，校验后再保存至持久状态目录；原图及模型不提交公共数据。具体配置见采集器 README。
+OCR 的运行配置为 `OCR_EXECUTABLE_PATH`、`OCR_TESSDATA_DIR` 和可选 `OCR_CACHE_DIR`。Linux 独立容器安装免费系统 OCR 及模型；Windows 本地验证使用被忽略的 `output/` 下专用轻量中英文模型，合计约 6.3 MiB，不修改共享安装模型。Oracle Compose 限制为 0.5 CPU、768 MiB、256 pids，OCR 每进程限一个线程；本轮 ARM64 验收在该限制下通过，最高观测 cgroup 内存峰值约 612.55 MiB，样本不保证未来所有页面的资源需求。项目结果缓存最多 32 文件、单文件 2 MiB、合计 32 MiB，默认由宿主机 `status/ocr-cache` 独立持久挂载到 `/app/ocr-cache`，新增前淘汰较旧结果，不受状态 staging 覆盖和清理影响。诊断先写 staging，校验后再保存至持久状态目录；原图及模型不提交公共数据。具体配置见采集器 README。
 
 采集流程按字段校验：可靠核心资料自动发布，未知字段明确保留，已提供的错误字段拒绝发布。官网解析失败不能被静默解释为“没有活动”；应保留上次已核验资料并暴露告警。每条数据保留来源和最后验证时间，便于追踪错误。`announcementUrl` 可保存官方公告 API 来源，客户端的“查看官网”打开活动专题 `sourceUrl`。
 
@@ -193,7 +193,7 @@ OCR 的运行配置为 `OCR_EXECUTABLE_PATH`、`OCR_TESSDATA_DIR` 和可选 `OCR
 
 上述 2026-09-05 检查针对旧版完整资料，不覆盖 1.1.0。新版本尚需在游戏内验证官方数据源迁移、部分资料显示、无坐标地图禁用、采集告警、官网按钮、多个同时开放活动、忽略/恢复及可选 Teleporter IPC。无游戏测试可以核验 JSON 兼容和校验、解析器、发现规则、保留旧资料及发布边界；不能代替 UI 和游戏 API 实测。具体采集与 Docker/Oracle 部署步骤见 `services/seasonal-event-collector/README.md`。
 
-此前 1.1.0 发布前的无游戏验证已通过：92 项采集器检查、39 项客户端校验、6 轮实时官网验收和 21 个历史专题兼容检查。工作区编译与 Release 打包、版本一致性和 ZIP 结构检查也已通过。该次发布已有用户授权，游戏内 UI 和 API 行为留待后续实测；该授权不表示本轮 OCR 适配已经上线。
+此前 1.1.0 发布前的无游戏验证已通过：92 项采集器检查、39 项客户端校验、6 轮实时官网验收和 21 个历史专题兼容检查。工作区编译与 Release 打包、版本一致性和 ZIP 结构检查也已通过。该次发布已有用户授权，游戏内 UI 和 API 行为留待后续实测；本轮 OCR 扩展的授权、部署及验收结果另见下文。
 
 无游戏自动化验证入口：
 
@@ -210,7 +210,13 @@ node scripts/verify-image-sources.mjs --rounds=3
 
 2026-10-09 本次新增 OCR 的真实验收已通过：`verify-image-sources.mjs` 对 FF15、糖豆人、2025 新生庆典、2026 守护天四场活动各读取三轮，共 12/12 次关闭全部人工游戏资料补充的采集管线验收，无人工任务目录、地点、奖励或完成覆盖，图片补充告警均为空。FF15 日期使用已核验公告时间回退，图片验收核对实际任务、NPC、地图和完成条件；糖豆人另核对 23 项页面奖励。五张官网原图（含糖豆人前置图）的坐标 helper 独立三轮通过 15/15；这些结果来自实际 OCR，不含单元测试替身。结果保存在被忽略的 `output/image-source-verification.json` 及 `output/ocr-probe/ts-helper-five-image-three-rounds.json`。
 
-完整自动发现与采集流程连续三轮均无 `imageRecognitionIssues`，四条保留活动资料的地图均核验，报告为 `output/live-verification-3gqDmz/results.json`。本轮 Node 128 项、客户端纯校验 39 项全部通过，工作区 Debug/Release 编译均为 0 warning、0 error。以上仅在本机完成，云端 ARM64 镜像尚未构建或上线，游戏内旗标和完成状态行为仍未实测。0.5 CPU、768 MiB 内存及 32 MiB 缓存是配置限制，不是服务器实测峰值。
+本机完整自动发现与采集流程连续三轮均无 `imageRecognitionIssues`，四条保留活动资料的地图均核验，报告为 `output/live-verification-3gqDmz/results.json`。本轮 Node 128 项、客户端纯校验 39 项全部通过，统一编译入口及完整 Release 打包均为 0 warning、0 error；实际执行的是 `./build.ps1 -NoRestore` 与 `./build.ps1 -Mode Release -NoRestore`。
+
+2026-10-09 云端 ARM64 镜像已构建并验收：关闭人工任务目录及游戏资料覆盖的四场活动各三轮通过 12/12，合计 65.159 秒；两次完整包装脚本 dry-run 用时 32.745/28.587 秒，四条活动地图均核验，图片识别问题为空，三个正式数据文件 SHA 不变。实际配置限制为 0.5 CPU、768 MiB、256 pids；独立图片管线内存峰值约 558.24 MiB，完整 dry-run 最高观测值约 612.55 MiB，未发生 OOM。独立持久缓存四文件、15,510 字节跨容器保留，32 MiB 仍是缓存上限，不能当作实测用量。
+
+正式采集于 2026-10-09 15:48:55（北京时间）完成，用时 24.298 秒，healthy、四条活动，数据发布提交为 `d52c195989a915ffdfd4cf2e511b0231988d37a8`，新版 schema 2 数据版本 7、旧版 schema 1 数据版本 3。再次正式采集用时 23.006 秒，healthy、`changed=false`、unchanged/exit 0，未产生新提交；定时器已恢复 enabled/active，按既有每 6 小时计划运行。详细代码、镜像及资源记录见 `services/seasonal-event-collector/deploy/oracle/README.md`。
+
+对应数据发布提交的校验与 Pages 部署均成功；独立公开验收确认新版 v7 有四条资料且 healthy、旧版 v3 有三条完整子集、候选为空，FF15/糖豆人/守护天字段一致。展示页在本次验收时显示两个开放活动、一个未来活动和数据版本 7，上线验收已完成；游戏内旗标点击和完成状态仍需独立实测。
 
 现有三种布局可以结合版本化任务索引识别其他唯一任务；游戏更新新增任务须更新索引，未适配布局仍可能需要修复，本轮验收不能证明未来所有官网图片均可自动识别。
 
@@ -221,7 +227,7 @@ npm run build
 node scripts/verify-game-data.mjs output/game-data-verification.json
 ```
 
-该检查比对目录与原报告中的游戏版本、语言、唯一任务和物品匹配、NPC、地图及世界坐标、任务链、成就指向和奖励字段。本次目录补齐、通用游戏索引和 OCR 适配已完成上述本机验收，尚未正式线上构建、部署或发布活动数据；数据兼容现有 1.1.0 客户端，无需更改插件版本。生产部署和发布按授权范围另行执行，游戏内地图旗标及完成状态显示仍需后续实测。新增 OCR 的验收与此前 1.1.0 的历史检查分别记录；维护时仍须核对模型故障、低置信、前置任务隔离和无人工目录的新任务。
+该检查比对目录与原报告中的游戏版本、语言、唯一任务和物品匹配、NPC、地图及世界坐标、任务链、成就指向和奖励字段。本次目录补齐、通用游戏索引和 OCR 适配已完成上述本机与云端验收，并正式部署及发布活动数据；数据兼容现有 1.1.0 客户端，无需更改插件版本。后续生产部署和发布仍按授权范围执行，游戏内地图旗标及完成状态显示仍需实测。新增 OCR 的验收与此前 1.1.0 的历史检查分别记录；维护时仍须核对模型故障、低置信、前置任务隔离和无人工目录的新任务。
 
 ## 自定义仓库发布流程
 
