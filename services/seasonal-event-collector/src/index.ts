@@ -93,9 +93,10 @@ async function main(): Promise<void> {
   const readiness = assessNextEventReadiness(events, collection.reviewCandidates, new Date(), warningHours);
   const hasDiscoveryFailure = discovery.errors.length > 0;
   const hasCollectionFailure = collection.failures.length > 0;
-  const status = hasDiscoveryFailure || hasCollectionFailure ? "alert" : readiness.state;
+  const hasImageFailure = collection.enrichmentIssues.length > 0;
+  const status = hasDiscoveryFailure || hasCollectionFailure || hasImageFailure ? "alert" : readiness.state;
   const code = hasDiscoveryFailure ? "candidate_discovery_failed" :
-    hasCollectionFailure ? "candidate_collection_failed" : readiness.code;
+    hasCollectionFailure ? "candidate_collection_failed" : hasImageFailure ? "image_enrichment_incomplete" : readiness.code;
 
   phase = "publication";
   const document: EventsDocument = {
@@ -154,6 +155,7 @@ async function main(): Promise<void> {
     candidates: reviewCandidates,
     discoveryErrors: discovery.errors,
     collectionErrors: collection.failures,
+    imageRecognitionIssues: collection.enrichmentIssues,
     automaticSourceCount: collection.automaticSourceCount,
     nextEvent: readiness,
   });

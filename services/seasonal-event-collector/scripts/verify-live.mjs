@@ -7,6 +7,7 @@ import { discoverCandidatePages } from "../dist/discovery.js";
 import { collectAutomaticEvents, legacyEvents } from "../dist/collection.js";
 import { preparePublication, publish } from "../dist/publisher.js";
 import { validateDocument } from "../dist/validate.js";
+import { resolveVerifiedQuest } from "../dist/verified-quests.js";
 
 const roundsArgument = process.argv.find(value => value.startsWith("--rounds="));
 const rounds = Number(roundsArgument?.split("=")[1] ?? "3");
@@ -42,15 +43,34 @@ try {
     const previous = publication.existingDocument;
     const collection = await collectAutomaticEvents(configuration, discovery.candidates, previous, asOf, { attempts: 2, baseDelayMs: 100 });
     assert.deepEqual(collection.failures, [], "all eligible official event pages must parse");
-    assert.equal(collection.reviewCandidates.length, 0);
+    assert.equal(collection.reviewCandidates.length, new Set(collection.enrichmentIssues.map(issue => issue.url)).size,
+      "only visible image-enrichment gaps may remain after core activity publication");
     for (const [url, dates] of expected) {
       const event = collection.events.find(event => event.sourceUrl === url);
+      if (Date.parse(dates[1]) <= asOf.getTime()) {
+        assert.equal(event, undefined, `expired automatic activity must leave the feed: ${url}`);
+        continue;
+      }
       assert.ok(event, `activity absent from automatically generated feed: ${url}`);
       assert.deepEqual([event.startAt, event.endAt], dates, `official dates changed for ${url}; recheck the announcement`);
-      assert.equal(event.location, null, "unverified world coordinates must remain unknown");
+      const targetName = url.includes("ffxv") ? "黑衣青年" : url.includes("fallguys") ? "抓紧胜利的王冠！" : null;
+      const verified = resolveVerifiedQuest(targetName, url, configuration.overrides.verifiedQuests);
+      if (verified) {
+        assert.equal(event.questName, verified.questName);
+        assert.equal(event.questNpc, verified.questNpc);
+        assert.equal(event.questLevel, verified.questLevel);
+        assert.deepEqual(event.location, verified.location);
+        assert.equal(event.questId, verified.completion.questId);
+        assert.equal(event.achievementId, verified.completion.achievementId ?? null);
+        if (verified.rewards) assert.deepEqual(event.rewards, verified.rewards);
+        if (url.includes("fallguys")) assert.equal(event.rewards.length, 23);
+      } else {
+        assert.equal(event.location, null, "unverified world coordinates must remain unknown");
+      }
     }
     const document = { schemaVersion: 2, dataVersion: publication.dataVersion, publishedAt: new Date().toISOString(),
-      events: collection.events, collectionStatus: { status: "ok", code: "healthy" } };
+      events: collection.events, collectionStatus: collection.enrichmentIssues.length > 0
+        ? { status: "alert", code: "image_enrichment_incomplete" } : { status: "ok", code: "healthy" } };
     validateDocument(document);
     const legacy = legacyEvents(document);
     assert.ok(legacy.length >= 1, "previously complete approved data must remain valid for legacy clients");
@@ -65,7 +85,7 @@ try {
     const summary = { round, eventCount: stored.events.length,
       activeCount: stored.events.filter(event => Date.parse(event.startAt) <= asOf.getTime() && asOf.getTime() < Date.parse(event.endAt)).length,
       upcomingCount: stored.events.filter(event => Date.parse(event.startAt) > asOf.getTime()).length,
-      changed, elapsedMs: Date.now() - start,
+      changed, elapsedMs: Date.now() - start, imageRecognitionIssues: collection.enrichmentIssues,
       fields: stored.events.map(event => ({ title: event.title, questName: event.questName, questNpc: event.questNpc,
         mapAvailable: event.location !== null, rewardCount: event.rewards.length })) };
     summaries.push(summary);

@@ -169,6 +169,13 @@ test("uses a verified world-coordinate override when the page has no displayed c
   }
 });
 
+test("preserves verified displayed coordinates when page-wide text contains another quest location", () => {
+  assert.deepEqual(resolveLocation("fallguys-2026", { x: 9.6, y: 9.0 }, {
+    locations: { "fallguys-2026": { territoryId: 144, mapId: 143, x: -55, y: -4, z: -72, displayX: 4.8, displayY: 6.1 } },
+    rewards: {}, completion: {},
+  }), { territoryId: 144, mapId: 143, x: -55, y: -4, z: -72, displayX: 4.8, displayY: 6.1 });
+});
+
 test("uses verified reward and completion overrides for image-only official pages", () => {
   const previousRewards = process.env.REWARD_OVERRIDES;
   const previousCompletion = process.env.COMPLETION_OVERRIDES;

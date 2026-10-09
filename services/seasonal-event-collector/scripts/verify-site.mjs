@@ -21,9 +21,18 @@ try {
   await page.goto("https://seasonal-event.test/");
   await page.waitForFunction(() => document.getElementById("state").textContent !== "正在读取");
   assert.deepEqual(errors, []);
-  assert.equal(await page.locator("#events .event-card").count(), 2);
-  assert.equal(await page.locator("#upcoming .event-card").count(), 1);
-  assert.match(await page.locator("#events").innerText(), /坐标尚未核验/);
+  const now = Date.now();
+  const active = data.events.filter(event => Date.parse(event.startAt) <= now && now < Date.parse(event.endAt));
+  const upcoming = data.events.filter(event => Date.parse(event.startAt) > now);
+  assert.equal(await page.locator("#events .event-card").count(), active.length);
+  assert.equal(await page.locator("#upcoming .event-card").count(), upcoming.length);
+  const cards = page.locator("#events .event-card");
+  for (let index = 0; index < active.length; index++) {
+    const event = active.sort((a, b) => Date.parse(a.endAt) - Date.parse(b.endAt))[index];
+    const text = await cards.nth(index).innerText();
+    if (event.location) assert.ok(!text.includes("坐标尚未核验"));
+    else assert.match(text, /坐标尚未核验/);
+  }
   await mkdir(resolve("output"), { recursive: true });
   await page.screenshot({ path: resolve("output/status-page.png"), fullPage: true });
   data.events = [];
@@ -32,5 +41,5 @@ try {
   await page.waitForFunction(() => document.getElementById("state").textContent.includes("告警"));
   assert.match(await page.locator("#events").innerText(), /采集有告警.*查看官网确认/);
   assert.deepEqual(errors, []);
-  console.log("Status page verified: two active cards, one upcoming card, explicit missing coordinates and source failure warning.");
+  console.log(`Status page verified: ${active.length} active cards, ${upcoming.length} upcoming cards, correct map availability and source failure warning.`);
 } finally { await browser.close(); }

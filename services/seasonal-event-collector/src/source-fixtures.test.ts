@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import test, { after, before } from "node:test";
 import { chromium, type Browser } from "playwright";
-import type { CollectorOverrides } from "./configuration.js";
+import { loadCollectorConfiguration, type CollectorOverrides } from "./configuration.js";
 import { collectEvents, parseDetailPage, type SourceOptions } from "./source.js";
 
 // Reduced DOM fixtures captured from the official 2026 pages on 2026-10-02.
@@ -14,6 +14,8 @@ const yokaiUrl = "https://actff1.web.sdo.com/project/20260715youkai-watch/vaz1gq
 const fallGuysUrl = "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html";
 const ids = { [ff15Url]: "ffxv-2026", [yokaiUrl]: "yokai-2026", [fallGuysUrl]: "fallguys-2026" };
 const noOverrides: CollectorOverrides = { locations: {}, rewards: {}, completion: {} };
+const verifiedOverrides: CollectorOverrides = { ...noOverrides, verifiedQuests: loadCollectorConfiguration().overrides.verifiedQuests };
+const indexedOverrides: CollectorOverrides = { ...noOverrides, gameIndex: loadCollectorConfiguration().overrides.gameIndex };
 const metadataFallbacks: SourceOptions["metadataFallbacks"] = {
   "ffxv-2026": { startAt: "2026-09-24T16:00:00+08:00", endAt: "2026-10-13T23:00:00+08:00" },
   "yokai-2026": { startAt: "2026-08-04T16:00:00+08:00", endAt: "2026-10-05T23:00:00+08:00" },
@@ -48,13 +50,20 @@ const fallGuysHtml = `<!doctype html><html><head><title>最终幻想14 × Fall G
   <h1><img alt="最终幻想14 x Fall Guys"></h1><h2>活动概要</h2><h3>举办时间</h3>
   <p>2026年10月7日16:00 ～ 2026年10月27日22:59</p>
   <h2>参加方法</h2><h3>在《最终幻想14》的世界中创建角色！</h3>
-  <h3>将角色等级提升至15级，完成支线任务「前往游乐场」</h3><h4>前往游乐场</h4><p>接取条件</p><p>任意职业 15级</p>
-  <h3>完成活动任务「抓紧胜利的王冠！」</h3><h4>抓紧胜利的王冠！</h4><p>接取条件</p><p>任意职业 15级</p>
+  <ul><li><h3>将角色等级提升至15级，完成支线任务「前往游乐场」</h3><h4>前往游乐场</h4><div class="fgs__howto__box"><p>接取条件</p><p>任意职业 15级</p><img alt=""></div></li>
+  <li><h3>完成活动任务「抓紧胜利的王冠！」</h3><h4>抓紧胜利的王冠！</h4><div class="fgs__howto__box"><p>接取条件</p><p>任意职业 15级</p><p>完成支线任务「前往游乐场」。</p><img alt=""></div></li></ul>
   <h3>游玩联动任务，获得「金碟声誉」</h3><h3>交换奖励道具</h3><p>将获得的金碟声誉交给「金碟声誉兑换员」来换取各种道具吧。</p>
   <h2>道具兑换</h2><table class="fgs__items__list"><thead><tr><th>可交换道具</th><th><p>所需数量</p><img alt=""></th></tr></thead><tbody>
     ${fallGuysRewardNames.map(name => `<tr><th><div class="fgs__items__list__detail"><img alt=""><div class="fgs__items__list__name">${name}</div></div></th><td><img alt=""><p>410</p></td></tr>`).join("")}
   </tbody></table>
   <table><thead><tr><th>新闻导航</th><th>数量</th></tr></thead><tbody><tr><td>官网首页</td><td>10</td></tr></tbody></table>
+</body></html>`;
+// Preserve the official two-block structure while supplying readable versions
+// of the map labels, so regressions cannot borrow a prerequisite NPC/location.
+const fallGuysTextMapHtml = `<!doctype html><html><head><title>最终幻想14 × Fall Guys 联动活动 | 《最终幻想14》官方网站</title></head><body>
+  <h2>活动概要</h2><p>2026年10月7日16:00 ～ 2026年10月27日22:59</p>
+  <ul><li><h3>完成支线任务「前往游乐场」</h3><h4>前往游乐场</h4><div class="fgs__howto__box"><p>任意职业 10级</p><p>NPC：挥金如土的年轻人</p><p>乌尔达哈现世回廊 X:9.6 Y:9.0</p></div></li>
+  <li><h3>完成活动任务「抓紧胜利的王冠！」</h3><h4>抓紧胜利的王冠！</h4><div class="fgs__howto__box"><p>任意职业 15级</p><p>完成支线任务「前往游乐场」。</p><p>NPC：莱维娜</p><p>金碟游乐场 X:4.8 Y:6.1</p></div></li></ul>
 </body></html>`;
 
 let browser: Browser;
@@ -118,6 +127,139 @@ test("Fall Guys fixture uses the actual activity quest, fresh date window and al
   assert.equal(event.startAt, "2026-10-07T16:00:00+08:00");
   assert.equal(event.endAt, "2026-10-27T23:00:00+08:00");
   assert.deepEqual(event.rewards.map(reward => reward.name), fallGuysRewardNames);
+});
+
+test("Fall Guys reads NPC, level and coordinates only from the target activity quest block", { timeout: 15000 }, async () => {
+  const event = await parseFixture(fallGuysUrl, fallGuysTextMapHtml, {
+    overrides: { ...noOverrides, locations: { "fallguys-2026": { territoryId: 144, mapId: 143, x: 0, y: 0, z: 0 } } },
+  });
+  assert.equal(event.questName, "抓紧胜利的王冠！");
+  assert.equal(event.questNpc, "莱维娜");
+  assert.equal(event.questLevel, 15);
+  assert.equal(event.location?.displayX, 4.8);
+  assert.equal(event.location?.displayY, 6.1);
+});
+
+test("unmatched structured quest headings leave fields unknown instead of reading other quests", { timeout: 15000 }, async () => {
+  const event = await parseFixture(fallGuysUrl, fallGuysTextMapHtml, {
+    overrides: { ...noOverrides, metadata: { "fallguys-2026": { questName: "尚未核验的新任务" } } },
+  });
+  assert.equal(event.questName, "尚未核验的新任务");
+  assert.equal(event.questNpc, null);
+  assert.equal(event.questLevel, null);
+  assert.equal(event.location, null);
+});
+
+test("a reusable quest template selects the explicit activity even when a prerequisite appears first", { timeout: 15000 }, async () => {
+  const html = `<!doctype html><html><head><title>最终幻想14联动活动</title></head><body><p>2026年10月7日16:00 ～ 10月27日22:59</p>
+    <div class="quest"><h3>前往游乐场</h3><p>NPC：挥金如土的年轻人</p><img width="640" height="640" src="https://static.web.sdo.com/prerequisite.png"></div>
+    <p>完成活动任务「抓紧胜利的王冠！」</p><div class="quest"><h3>抓紧胜利的王冠！</h3><p>任意职业 15级</p><img width="640" height="640" src="https://static.web.sdo.com/activity.png"></div></body></html>`;
+  const observed: Array<string | null> = [];
+  const event = await parseFixture(fallGuysUrl, html, { overrides: indexedOverrides, imageEvidenceReader: async (_page, target) => {
+    observed.push(target);
+    return { imageUrls: [], text: "莱维娜", lines: [
+      { text: "X:4.8 Y:6.1", confidence: 90, words: [] }, { text: "莱维娜", confidence: 90, words: [] },
+    ] };
+  } });
+  assert.deepEqual(observed, ["抓紧胜利的王冠！"]);
+  assert.equal(event.questName, "抓紧胜利的王冠！"); assert.equal(event.questNpc, "莱维娜"); assert.equal(event.location?.mapId, 196);
+});
+
+test("conflicting image coordinates disable the map rather than restoring a known catalogue location", { timeout: 15000 }, async () => {
+  const html = ff15Html.replace("</div>\n  <h3>关于任务的推进", `<img width="640" height="640" src="https://static.web.sdo.com/task.png"></div>\n  <h3>关于任务的推进`);
+  const issues: string[] = [];
+  const event = await parseFixture(ff15Url, html, { overrides: { ...verifiedOverrides, gameIndex: indexedOverrides.gameIndex },
+    onEnrichmentIssue: (_url, code) => issues.push(code), imageEvidenceReader: async () => ({ imageUrls: [], text: "", lines: [
+      { text: "X:8.5 Y:9.7 X:9.6 Y:9.0", confidence: 90, words: [] },
+    ] }) });
+  assert.deepEqual(issues, ["image_map_not_verified"]); assert.equal(event.location, null);
+});
+
+test("traditional seasonal introductions still supply quest details without structured blocks", { timeout: 15000 }, async () => {
+  const event = await parseFixture(ff15Url, `<!doctype html><html><head><title>新生庆典</title></head><body>
+    <p>2026年8月27日15:00 ～ 9月10日22:59</p><h2>新生庆典与音乐的轨迹</h2>
+    <p>舰尾楼的异国的诗人有点在意某件事。</p><h3>接受任务条件</h3><p>等级15</p></body></html>`);
+  assert.equal(event.questName, "新生庆典与音乐的轨迹");
+  assert.equal(event.questNpc, "异国的诗人");
+  assert.equal(event.questLevel, 15);
+});
+
+test("FFXV image-only details use the verified game map, reward catalogue and final quest completion", { timeout: 15000 }, async () => {
+  const event = await parseFixture(ff15Url, ff15Html, { overrides: verifiedOverrides, allowPartial: false });
+  assert.deepEqual(event.location, { territoryId: 130, mapId: 13, x: -132.445, y: 3.98254, z: -75.0313, displayX: 8.5, displayY: 9.7 });
+  assert.equal(event.questId, 68696);
+  assert.notEqual(event.questId, 68694, "starting the first quest does not mean the collaboration is complete");
+  assert.equal(event.achievementId, 2241);
+  assert.equal(event.rewards.length, 13);
+  assert.ok(event.rewards.some(reward => reward.name === "雷迦利亚G型取车证"));
+  assert.ok(event.rewards.every(reward => reward.category));
+  const verifiedRewards = verifiedOverrides.verifiedQuests!.find(quest => quest.questName === "黑衣青年")!.rewards!;
+  assert.deepEqual(event.rewards, verifiedRewards);
+});
+
+test("Fall Guys image-only NPC/map details use its verified activity quest rather than the prerequisite", { timeout: 15000 }, async () => {
+  const event = await parseFixture(fallGuysUrl, fallGuysHtml, { overrides: verifiedOverrides, allowPartial: false });
+  assert.equal(event.questName, "抓紧胜利的王冠！");
+  assert.equal(event.questNpc, "莱维娜");
+  assert.equal(event.questLevel, 15);
+  assert.equal(event.questId, 70337);
+  assert.equal(event.achievementId, null);
+  assert.deepEqual(event.location, { territoryId: 144, mapId: 196, x: -65.3643, y: 0.0697914, z: 0.811196, displayX: 4.8, displayY: 6.1 });
+  assert.deepEqual(event.rewards.map(reward => reward.name), fallGuysRewardNames);
+});
+
+test("same quest name on an unrelated source path cannot inherit the verified event details", { timeout: 15000 }, async () => {
+  const url = "https://actff1.web.sdo.com/project/unrelated-event/index.html";
+  const event = await parseFixture(url, ff15Html, {
+    eventIds: { [url]: "unrelated-event" }, overrides: verifiedOverrides,
+    metadataFallbacks: { "unrelated-event": metadataFallbacks!["ffxv-2026"] },
+  });
+  assert.equal(event.questName, "黑衣青年");
+  assert.equal(event.location, null);
+  assert.equal(event.questId, null);
+  assert.equal(event.achievementId, null);
+  assert.deepEqual(event.rewards, []);
+});
+
+test("explicit manual unknowns, locations, completion and rewards remain authoritative over catalogue fallback", { timeout: 15000 }, async () => {
+  const location = { territoryId: 144, mapId: 196, x: -65.3643, y: 0.0697914, z: 0.811196, displayX: 4.8, displayY: 6.1 };
+  const event = await parseFixture(fallGuysUrl, fallGuysHtml, { overrides: {
+    ...verifiedOverrides, metadata: { "fallguys-2026": { questNpc: null, questLevel: null } },
+    locations: { "fallguys-2026": location }, completion: { "fallguys-2026": { questId: null, achievementId: null } },
+    rewards: { "fallguys-2026": [] },
+  } });
+  assert.equal(event.questNpc, null);
+  assert.equal(event.questLevel, null);
+  assert.deepEqual(event.location, location);
+  assert.equal(event.questId, null);
+  assert.equal(event.achievementId, null);
+  assert.deepEqual(event.rewards, []);
+});
+
+test("a malformed explicit location override fails rather than silently using the verified catalogue", { timeout: 15000 }, async () => {
+  await assert.rejects(parseFixture(fallGuysUrl, fallGuysHtml, { overrides: {
+    ...verifiedOverrides, locations: { "fallguys-2026": null } as unknown as CollectorOverrides["locations"],
+  } }), /missing LOCATION_OVERRIDES entry/);
+});
+
+test("empty page reward fields retain verified descriptions while fresh named rewards are included", { timeout: 15000 }, async () => {
+  const html = ff15Html.replace("</body>", '<div class="rewards"><img alt="雷迦利亚G型取车证"><img alt="官网新奖励" data-category="宠物"></div></body>');
+  const event = await parseFixture(ff15Url, html, { overrides: verifiedOverrides });
+  const original = verifiedOverrides.verifiedQuests!.find(quest => quest.questName === "黑衣青年")!.rewards!.find(reward => reward.name === "雷迦利亚G型取车证")!;
+  assert.ok(original.description);
+  assert.deepEqual(event.rewards.find(reward => reward.name === "雷迦利亚G型取车证"), original);
+  assert.equal(event.rewards.length, 14);
+  assert.equal(event.rewards.at(-1)?.name, "官网新奖励");
+  assert.equal(event.rewards.at(-1)?.category, "宠物");
+});
+
+test("a fresh named tooltip can update a verified reward description without duplicating the reward", { timeout: 15000 }, async () => {
+  const html = ff15Html.replace("</body>", '<div class="rewards"><img alt="雷迦利亚G型取车证"></div><div role="tooltip">官网更新的奖励说明</div></body>');
+  const event = await parseFixture(ff15Url, html, { overrides: verifiedOverrides });
+  assert.equal(event.rewards.length, 13);
+  const reward = event.rewards.find(value => value.name === "雷迦利亚G型取车证")!;
+  assert.equal(reward.description, "官网更新的奖励说明");
+  assert.equal(reward.category, "其他"); // The game Item row classifies the mount-unlock certificate as Other.
 });
 
 test("configured verified metadata wins over DOM while explicit unknown fields remain null", { timeout: 15000 }, async () => {

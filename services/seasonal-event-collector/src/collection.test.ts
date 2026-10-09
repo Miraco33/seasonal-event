@@ -51,6 +51,18 @@ test("a discovered official activity publishes verified information without manu
   assert.equal(result.failures.length, 0);
   validateDocument(document(result.events));
 });
+test("image recognition failures keep verified activity information and expose the missing fields for attention", async () => {
+  const result = await collectAutomaticEvents(configuration, [candidate], undefined, now, {}, {
+    collect: async (_, options) => {
+      options.onEnrichmentIssue?.(url, "image_ocr_failed", "required Chinese model cannot load");
+      return [event()];
+    },
+  });
+  assert.equal(result.events.length, 1); assert.equal(result.events[0].location, null);
+  assert.equal(result.failures.length, 0);
+  assert.equal(result.enrichmentIssues[0].code, "image_ocr_failed");
+  assert.deepEqual(result.reviewCandidates[0].reviewGaps, ["image_ocr_failed"]);
+});
 test("published open activities remain monitored after the announcement leaves the discovery window", async () => {
   const previous = document([{ ...event(), announcementUrl }]);
   let requests = 0;

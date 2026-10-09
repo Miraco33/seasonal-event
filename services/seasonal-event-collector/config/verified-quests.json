@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "gameVersion": "2026.09.15.0000.0000",
+  "language": "ChineseSimplified",
+  "verifiedAt": "2026-10-08T15:30:41.8946626+00:00",
+  "quests": [
+    {
+      "questName": "黑衣青年",
+      "sourcePathKeywords": [
+        "ffxv"
+      ],
+      "startQuestId": 68694,
+      "questNpc": "琪琵·嘉奇亚",
+      "questLevel": 50,
+      "location": {
+        "territoryId": 130,
+        "mapId": 13,
+        "x": -132.445,
+        "y": 3.98254,
+        "z": -75.0313,
+        "displayX": 8.5,
+        "displayY": 9.7
+      },
+      "mapTransform": {
+        "sizeFactor": 200,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "completion": {
+        "questId": 68696,
+        "achievementId": 2241
+      },
+      "questChain": [
+        {
+          "questId": 68694,
+          "questName": "黑衣青年",
+          "previousQuestIds": [
+            70058
+          ]
+        },
+        {
+          "questId": 68695,
+          "questName": "暗夜来访者",
+          "previousQuestIds": [
+            68694
+          ]
+        },
+        {
+          "questId": 68696,
+          "questName": "风之使者",
+          "previousQuestIds": [
+            68695
+          ]
+        }
+      ],
+      "evidence": {
+        "issuerNpcId": 1026849,
+        "issuerLocationId": 7720435,
+        "officialSources": [
+          "https://actff1.web.sdo.com/project/20260915ffxv/index.html",
+          "https://static.web.sdo.com/jijiamobile/pic/ff14/20190715FFXV/f0XNIWR0djaC75nnTnghqNy16s.png",
+          "https://static.web.sdo.com/jijiamobile/pic/ff14/20190715FFXV/popimg01.png",
+          "https://static.web.sdo.com/jijiamobile/pic/ff14/20190715FFXV/popimg02.png",
+          "https://static.web.sdo.com/jijiamobile/pic/ff14/20190715FFXV/popimg03.png",
+          "https://static.web.sdo.com/jijiamobile/pic/ff14/20190715FFXV/popimg04.png",
+          "https://static.web.sdo.com/jijiamobile/pic/ff14/20190715FFXV/popimg05.png",
+          "https://static.web.sdo.com/jijiamobile/pic/ff14/20190715FFXV/popimg06.png",
+          "https://static.web.sdo.com/jijiamobile/pic/ff14/20190715FFXV/popimg07.png"
+        ],
+        "completionAchievementQuestId": 68696,
+        "rewardItemIds": [
+          24608,
+          24609,
+          24610,
+          24611,
+          24624,
+          24802,
+          24880,
+          25078,
+          25079,
+          25080,
+          25081,
+          25082,
+          25083
+        ],
+        "terminalQuestId": 68696
+      },
+      "rewards": [
+        {
+          "name": "路西斯王子的外套",
+          "category": "身体防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "路西斯王子的半指手套",
+          "category": "手部防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "路西斯王子的打底裤",
+          "category": "腿部防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "路西斯王子的皮靴",
+          "category": "脚部防具",
+          "description": "",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "雷迦利亚G型取车证",
+          "category": "其他",
+          "description": "获得新坐骑。\r\n雷迦利亚G型的取车证明。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "发型样式：诺克提斯",
+          "category": "杂货",
+          "description": "上面记载着特殊的发型。\r\n使用后可在美容师那里选择此发型。\r\n硌狮族除外",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "九宫幻卡：诺克提斯·路西斯·切拉姆",
+          "category": "九宫幻卡",
+          "description": "九宫幻卡对局时所用的卡片。\r\n编号外14\r\n稀有度：★★★★★",
+          "flags": [
+            "不可交易"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：锤头鲨",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«锤头鲨»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：幻想圆舞曲",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«幻想圆舞曲»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：休息与反省",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«休息与反省»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：黑暗遮蔽",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«黑暗遮蔽»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：夜之启示",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«夜之启示»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        },
+        {
+          "name": "管弦乐琴乐谱：快速加油",
+          "category": "管弦乐琴乐谱",
+          "description": "在管弦乐琴乐谱集中加入谱有«快速加油»旋律的管弦乐琴乐谱。",
+          "flags": [
+            "唯一持有",
+            "不可交易",
+            "不可丢弃"
+          ]
+        }
+      ]
+    },
+    {
+      "questName": "抓紧胜利的王冠！",
+      "sourcePathKeywords": [
+        "fallguys"
+      ],
+      "startQuestId": 70337,
+      "questNpc": "莱维娜",
+      "questLevel": 15,
+      "location": {
+        "territoryId": 144,
+        "mapId": 196,
+        "x": -65.3643,
+        "y": 0.0697914,
+        "z": 0.811196,
+        "displayX": 4.8,
+        "displayY": 6.1
+      },
+      "mapTransform": {
+        "sizeFactor": 400,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "completion": {
+        "questId": 70337
+      },
+      "questChain": [
+        {
+          "questId": 70337,
+          "questName": "抓紧胜利的王冠！",
+          "previousQuestIds": [
+            65970
+          ]
+        }
+      ],
+      "evidence": {
+        "issuerNpcId": 1011145,
+        "issuerLocationId": 5584108,
+        "officialSources": [
+          "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
+          "https://static.web.sdo.com/jijiamobile/pic/ff14/20240329fallguyscollaboration/jnQM-eULNxVvPOmWxlG9jJGFZ8.jpg"
+        ],
+        "terminalQuestId": 70337
+      }
+    }
+  ]
+}

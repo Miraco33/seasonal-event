@@ -72,6 +72,7 @@ jobs:
               no_active_event_without_candidate: "当前没有开放活动，也没有待审核的下一活动。",
               candidate_discovery_failed: "官方活动公告检查失败，需要查看东京服务器上的最近运行状态。",
               candidate_collection_failed: "部分官方活动资料读取或校验失败，已保留上次核验的数据。",
+              image_enrichment_incomplete: "活动已经收录，但部分任务图片无法与游戏数据唯一核验，缺失字段保持未知。",
               run_failed: "采集或发布前校验失败，需要查看东京服务器上的最近运行状态。",
             };
             const titleByCode = {
@@ -80,6 +81,7 @@ jobs:
               no_active_event_without_candidate: "【自动提醒】当前无开放活动，尚未发现下一活动",
               candidate_discovery_failed: "【自动告警】官方活动公告检查失败",
               candidate_collection_failed: "【自动告警】部分活动资料读取失败",
+              image_enrichment_incomplete: "【自动告警】活动图片资料未能完整核验",
               run_failed: "【自动告警】季节活动采集运行失败",
             };
             const gapNames = {
@@ -89,6 +91,10 @@ jobs:
               location_override: "补充任务接取位置",
               reward_override: "补充奖励资料",
               completion_override: "核实任务、成就与传送 ID",
+              image_ocr_failed: "检查图片识别引擎和中英文模型是否可用",
+              quest_not_in_game_index: "更新国服任务索引并核验新任务",
+              ambiguous_game_quest: "核验同名任务，不能自动选择",
+              image_map_not_verified: "核验图片坐标与任务地图，地图按钮保持禁用",
             };
             const lines = [
               marker,

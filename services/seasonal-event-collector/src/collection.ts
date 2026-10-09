@@ -29,7 +29,8 @@ export async function collectAutomaticEvents(
     collect?: (urls: string[], options: SourceOptions) => Promise<SeasonalEvent[]>;
     fetch?: typeof globalThis.fetch;
   } = {},
-): Promise<{ events: SeasonalEvent[]; failures: SourceFailure[]; reviewCandidates: ReviewCandidate[]; automaticSourceCount: number }> {
+): Promise<{ events: SeasonalEvent[]; failures: SourceFailure[]; enrichmentIssues: Array<SourceFailure & { code: string }>;
+  reviewCandidates: ReviewCandidate[]; automaticSourceCount: number }> {
   const fetchImpl = dependencies.fetch ?? globalThis.fetch;
   const configuredIds = { ...configuration.eventIds };
   const sources = new Map<string, string>();
@@ -38,6 +39,7 @@ export async function collectAutomaticEvents(
   const ignored = new Set(configuration.ignoredCandidateUrls.map(sourceKey));
   const allowedHosts = new Set(configuration.allowedCandidateHosts);
   const failures: SourceFailure[] = [];
+  const enrichmentIssues: Array<SourceFailure & { code: string }> = [];
   const metadataFallbacks: Record<string, EventMetadataOverride> = {};
   const announcements = new Map<string, string>();
 
@@ -97,7 +99,9 @@ export async function collectAutomaticEvents(
     overrides: configuration.overrides,
     metadataFallbacks,
     allowPartial: true,
+    imageRecognitionAsOf: now.toISOString(),
     onSourceError: (url, error) => failures.push({ url, message: message(error) }),
+    onEnrichmentIssue: (url, code, message) => enrichmentIssues.push({ url, code, message }),
   });
   const events = new Map<string, SeasonalEvent>();
   const approved = new Set(configuration.approvedSourceUrls.map(sourceKey));
@@ -124,9 +128,20 @@ export async function collectAutomaticEvents(
       reviewGaps: ["required_title_or_time_not_verified"],
     });
   }
+  const retainedEnrichmentIssues = enrichmentIssues.filter(issue => events.has(sourceKey(issue.url)));
+  for (const issue of retainedEnrichmentIssues) {
+    const key = sourceKey(issue.url);
+    if (reviewCandidates.some(candidate => sourceKey(candidate.url) === key)) continue;
+    const candidate = candidateByKey.get(key);
+    const event = events.get(key);
+    reviewCandidates.push({ ...(candidate ?? { url: issue.url, title: event?.title ?? "Official task image", discoveredFrom: issue.url,
+      sourceType: "discovered" as const, matchedKeywords: [], reviewStatus: "pending" as const }),
+      stableEventId: stableEventId(issue.url, configuredIds), reviewGaps: [issue.code] });
+  }
   return {
     events: [...events.values()].sort((a, b) => a.id.localeCompare(b.id)),
     failures,
+    enrichmentIssues: retainedEnrichmentIssues,
     reviewCandidates,
     automaticSourceCount: [...sources.keys()].filter(key => !approved.has(key)).length,
   };

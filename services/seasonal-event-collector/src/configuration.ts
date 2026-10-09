@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { EventLocation, EventReward, TeleportTarget } from "./models.js";
+import { parseVerifiedQuestCatalogue, type VerifiedQuestDefinition } from "./verified-quests.js";
+import { parseGameDataIndex, type GameDataIndex } from "./game-index.js";
 
 type CompletionOverride = {
   questId?: number | null;
@@ -23,6 +25,8 @@ export interface CollectorOverrides {
   rewards: Record<string, EventReward[]>;
   completion: Record<string, CompletionOverride>;
   metadata?: Record<string, EventMetadataOverride>;
+  verifiedQuests?: VerifiedQuestDefinition[];
+  gameIndex?: GameDataIndex;
 }
 
 export interface CollectorConfiguration {
@@ -50,6 +54,8 @@ interface ConfigurationFile {
 }
 
 const defaultConfigurationFile = fileURLToPath(new URL("../config/collector.json", import.meta.url));
+const defaultVerifiedQuestsFile = fileURLToPath(new URL("../config/verified-quests.json", import.meta.url));
+const defaultGameIndexFile = fileURLToPath(new URL("../config/game-quest-index.json", import.meta.url));
 
 export function loadCollectorConfiguration(): CollectorConfiguration {
   const configuredPath = process.env.COLLECTOR_CONFIG_FILE?.trim();
@@ -80,6 +86,8 @@ export function loadCollectorConfiguration(): CollectorConfiguration {
       rewards: { ...document.overrides.rewards, ...readEnvironmentMap("REWARD_OVERRIDES") } as Record<string, EventReward[]>,
       completion: { ...document.overrides.completion, ...readEnvironmentMap("COMPLETION_OVERRIDES") } as Record<string, CompletionOverride>,
       metadata: { ...document.overrides.metadata, ...readEnvironmentMap("EVENT_METADATA_OVERRIDES") } as Record<string, EventMetadataOverride>,
+      verifiedQuests: parseVerifiedQuestCatalogue(JSON.parse(readFileSync(defaultVerifiedQuestsFile, "utf8"))).quests,
+      gameIndex: parseGameDataIndex(JSON.parse(readFileSync(defaultGameIndexFile, "utf8"))),
     },
   };
 }

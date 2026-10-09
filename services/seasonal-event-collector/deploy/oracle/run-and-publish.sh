@@ -42,7 +42,7 @@ COLLECTOR_STARTED=0
 COLLECTOR_STATUS_PERSISTED=0
 PREVIEW_PERSISTED=0
 PUBLISHED_COMMIT=""
-mkdir -p "$OUTPUT_ROOT" "$STATUS_ROOT"
+mkdir -p "$OUTPUT_ROOT" "$STATUS_ROOT" "$STATUS_ROOT/ocr-cache"
 
 write_wrapper_status() {
   wrapper_exit=$1

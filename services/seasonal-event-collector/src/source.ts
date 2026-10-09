@@ -2,6 +2,11 @@ import { chromium, type Page } from "playwright";
 import { loadCollectorConfiguration, type CollectorOverrides, type EventMetadataOverride } from "./configuration.js";
 import type { EventReward, SeasonalEvent, TeleportTarget } from "./models.js";
 import { navigateWithRetry, type NetworkOptions } from "./network.js";
+import { resolveVerifiedQuest } from "./verified-quests.js";
+import { matchImageQuest, type AutomaticQuestDetails } from "./game-index.js";
+import { imageCoordinates } from "./image-ocr.js";
+import { readTaskImages, taskImageUrls, type ImageReader } from "./task-images.js";
+import { writeDiagnostic } from "./run-status.js";
 
 export type SourceOptions = NetworkOptions & {
   overrides?: CollectorOverrides;
@@ -9,6 +14,10 @@ export type SourceOptions = NetworkOptions & {
   metadataFallbacks?: Record<string, EventMetadataOverride>;
   allowPartial?: boolean;
   onSourceError?: (url: string, error: unknown) => void;
+  onEnrichmentIssue?: (url: string, code: string, message: string) => void;
+  imageReader?: ImageReader;
+  imageEvidenceReader?: typeof readTaskImages;
+  imageRecognitionAsOf?: string;
 };
 
 export async function collectEvents(
@@ -60,21 +69,54 @@ export async function parseDetailPage(
   const startAt = metadata?.startAt ?? parsedWindow?.startAt ?? fallback?.startAt;
   const endAt = metadata?.endAt ?? parsedWindow?.endAt ?? fallback?.endAt;
   const title = metadata?.title ?? selectEventTitle(await page.locator("h1,h2,h3").allInnerTexts(), await page.title()) ?? fallback?.title;
-  const questHeadings = await page.locator(".quest h2, .quest h3, .quest h4, [class*='quest__title'], [class*='quest_title']")
+  const questHeadings = await page.locator(".quest h2, .quest h3, .quest h4, .content__event-info__quest--title, [class*='quest__title'], [class*='quest_title']")
     .evaluateAll(elements => elements.map(element =>
       element.textContent?.trim() || element.querySelector("img")?.getAttribute("alt")?.trim() || ""));
-  const parsedQuestName = selectEventTitle(questHeadings) ?? extractQuestName(body, title ?? "");
+  const parsedQuestName = extractQuestName(body, title ?? "") ?? selectEventTitle(questHeadings);
   const questName = metadata?.questName !== undefined ? metadata.questName : parsedQuestName ?? fallback?.questName ?? null;
-  const questNpc = metadata?.questNpc !== undefined ? metadata.questNpc : extractNpc(body) ?? fallback?.questNpc ?? null;
+  const verifiedQuest = resolveVerifiedQuest(questName, url, overrides.verifiedQuests);
+  const questText = await extractQuestSection(page, questName) ?? body;
+  let automaticQuest: AutomaticQuestDetails | undefined;
+  let imageMapConflict = false;
+  const issue = (code: string, message: string) => {
+    writeDiagnostic({ level: "warning", code, url, message });
+    options.onEnrichmentIssue?.(url, code, message);
+  };
+  const imageIsRelevant = !options.imageRecognitionAsOf || !endAt || Date.parse(endAt) > Date.parse(options.imageRecognitionAsOf);
+  if (imageIsRelevant && overrides.gameIndex && (await taskImageUrls(page, questName)).length > 0 && overrides.locations[id] === undefined) {
+    try {
+      const evidence = await (options.imageEvidenceReader ?? readTaskImages)(page, questName, options.imageReader);
+      automaticQuest = matchImageQuest(questName, questText, evidence.lines, overrides.gameIndex);
+      writeDiagnostic({ level: automaticQuest.code === "verified" ? "info" : "warning", code: "task_image_verification",
+        url, questName, gameVersion: overrides.gameIndex.gameVersion, result: automaticQuest.code,
+        imageUrls: evidence.imageUrls, coordinates: imageCoordinates(evidence.lines),
+        recognizedText: evidence.text.slice(0, 1000) });
+      if (automaticQuest.code !== "verified") {
+        const coordinates = imageCoordinates(evidence.lines);
+        imageMapConflict = Boolean(verifiedQuest && (coordinates.length > 1 || (coordinates.length === 1 &&
+          (coordinates[0].x !== verifiedQuest.location.displayX || coordinates[0].y !== verifiedQuest.location.displayY))));
+        issue(automaticQuest.code, `Official task image could not be uniquely verified against game data ${overrides.gameIndex.gameVersion}: ${questName}`);
+      }
+    } catch (error) {
+      issue("image_ocr_failed", error instanceof Error ? error.message : String(error));
+    }
+  }
+  const questNpc = metadata?.questNpc !== undefined ? metadata.questNpc : extractNpc(questText) ?? automaticQuest?.npc ?? verifiedQuest?.questNpc ?? fallback?.questNpc ?? null;
   const missing = [
     !title && "title", !startAt && "startAt", !endAt && "endAt",
     !options.allowPartial && !questName && "questName", !options.allowPartial && !questNpc && "questNpc",
   ].filter(Boolean);
   if (missing.length > 0) throw new Error(`unable to parse required fields (${missing.join(", ")}): ${url}`);
-  const coordinates = extractCoordinates(body);
-  const location = options.allowPartial && overrides.locations[id] === undefined ? null : resolveLocation(id, coordinates, overrides);
-  const completion = resolveCompletion(id, overrides);
-  const rewards = resolveRewards(id, await extractRewards(page), overrides);
+  const coordinates = extractCoordinates(questText);
+  const verifiedLocation = imageMapConflict ? undefined : verifiedQuest?.location ?? automaticQuest?.location;
+  const locationOverrides = overrides.locations[id] === undefined && verifiedLocation
+    ? { ...overrides, locations: { ...overrides.locations, [id]: verifiedLocation } } : overrides;
+  const location = options.allowPartial && locationOverrides.locations[id] === undefined ? null : resolveLocation(id, coordinates, locationOverrides);
+  const completion: ReturnType<typeof resolveCompletion> = overrides.completion[id] !== undefined
+    ? resolveCompletion(id, overrides) : verifiedQuest?.completion ?? automaticQuest?.completion ?? {};
+  const parsedRewards = await extractRewards(page);
+  const rewards = overrides.rewards[id] !== undefined ? resolveRewards(id, parsedRewards, overrides)
+    : mergeRewards(verifiedQuest?.rewards ?? automaticQuest?.rewards ?? [], parsedRewards);
 
   return {
     id,
@@ -82,7 +124,7 @@ export async function parseDetailPage(
     startAt: startAt!,
     endAt: endAt!,
     questName,
-    questLevel: metadata?.questLevel !== undefined ? metadata.questLevel : extractLevel(body) ?? fallback?.questLevel ?? null,
+    questLevel: metadata?.questLevel !== undefined ? metadata.questLevel : extractLevel(questText) ?? automaticQuest?.level ?? verifiedQuest?.questLevel ?? fallback?.questLevel ?? null,
     questNpc,
     questId: completion.questId ?? null,
     location,
@@ -92,6 +134,39 @@ export async function parseDetailPage(
     sourceUrl: url,
     lastVerifiedAt: new Date().toISOString(),
   };
+}
+
+function mergeRewards(verified: EventReward[], parsed: EventReward[]): EventReward[] {
+  const rewards = new Map(verified.map(reward => [reward.name, { ...reward, flags: [...reward.flags] }]));
+  for (const reward of parsed) {
+    const previous = rewards.get(reward.name);
+    rewards.set(reward.name, previous ? {
+      name: reward.name,
+      category: reward.category || previous.category,
+      description: reward.description || previous.description,
+      flags: reward.flags.length > 0 ? [...new Set([...previous.flags, ...reward.flags])] : previous.flags,
+    } : reward);
+  }
+  return [...rewards.values()];
+}
+
+async function extractQuestSection(page: Page, questName: string | null): Promise<string | null> {
+  return page.locator(".quest, .fgs__howto__box, .content__event-info").evaluateAll((blocks, target) => {
+    // Unknown templates retain the traditional introduction parser. Once a
+    // structured quest template is present, unmatched or image-only fields
+    // must not be taken from another quest elsewhere on the page.
+    if (blocks.length === 0) return null;
+    if (!target) return "";
+    for (const block of blocks) {
+      const headingScope = block.matches(".fgs__howto__box") ? block.closest("li") : block;
+      const headings = Array.from(headingScope?.querySelectorAll("h2,h3,h4") || []);
+      if (headings.some(heading => {
+        const name = heading.textContent?.trim() || heading.querySelector("img")?.getAttribute("alt")?.trim();
+        return name?.normalize("NFKC").replace(/\s+/g, "") === target.normalize("NFKC").replace(/\s+/g, "");
+      })) return (block as HTMLElement).innerText;
+    }
+    return "";
+  }, questName);
 }
 
 export function parseTimeWindow(text: string): { startAt: string; endAt: string } | null {
@@ -127,7 +202,7 @@ export function resolveLocation(
   const override = overrides.locations[id];
   if (!override) throw new Error(`missing LOCATION_OVERRIDES entry for event: ${id}`);
   return coordinates
-    ? { ...override, displayX: coordinates.x, displayY: coordinates.y }
+    ? { ...override, displayX: override.displayX ?? coordinates.x, displayY: override.displayY ?? coordinates.y }
     : override;
 }
 

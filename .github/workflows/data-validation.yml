@@ -79,6 +79,7 @@ jobs:
             "alert:no_active_event_without_candidate",
             "alert:candidate_discovery_failed",
             "alert:candidate_collection_failed",
+            "alert:image_enrichment_incomplete",
             "review_required:candidate_review_required",
             "error:run_failed",
           ]);

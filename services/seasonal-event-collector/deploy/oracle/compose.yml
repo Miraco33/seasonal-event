@@ -16,6 +16,7 @@ services:
       OUTPUT_FILE: /app/output/events-v2.json
       LEGACY_OUTPUT_FILE: /app/output/events.json
       PREVIEW_OUTPUT_FILE: /app/status/preview.json
+      OCR_CACHE_DIR: /app/ocr-cache
       PUBLISH_MODE: filesystem
       STATUS_OUTPUT_FILE: /app/status/collector.json
       TZ: Asia/Shanghai
@@ -30,8 +31,14 @@ services:
       - type: bind
         source: ${COLLECTOR_STATUS_DIR:-./status}
         target: /app/status
+      - type: bind
+        source: ./status/ocr-cache
+        target: /app/ocr-cache
     init: true
     restart: "no"
+    cpus: "0.5"
+    mem_limit: 768m
+    pids_limit: 256
     logging:
       driver: local
       options:
