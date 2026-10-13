@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 7,
-  "publishedAt": "2026-10-09T07:48:55.906Z",
+  "dataVersion": 8,
+  "publishedAt": "2026-10-13T18:22:10.888Z",
   "events": [
     {
       "id": "seasonal-090dc058eda9",
@@ -24,153 +24,8 @@
       "achievementId": 3945,
       "rewards": [],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261005All_Saints_Wake/hjwff6jkcti4/index.html",
-      "lastVerifiedAt": "2026-10-09T07:48:38.198Z",
+      "lastVerifiedAt": "2026-10-13T18:21:55.594Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393960"
-    },
-    {
-      "id": "seasonal-58653ee55805",
-      "title": "最终幻想XIV x 最终幻想XV 「献给英雄的夜曲」",
-      "startAt": "2026-09-24T16:00:00+08:00",
-      "endAt": "2026-10-13T23:00:00+08:00",
-      "questName": "黑衣青年",
-      "questLevel": 50,
-      "questNpc": "琪琵·嘉奇亚",
-      "questId": 68696,
-      "location": {
-        "territoryId": 130,
-        "mapId": 13,
-        "x": -132.445,
-        "y": 3.98254,
-        "z": -75.0313,
-        "displayX": 8.5,
-        "displayY": 9.7
-      },
-      "achievementId": 2241,
-      "rewards": [
-        {
-          "name": "路西斯王子的外套",
-          "category": "身体防具",
-          "description": "",
-          "flags": [
-            "不可交易"
-          ]
-        },
-        {
-          "name": "路西斯王子的半指手套",
-          "category": "手部防具",
-          "description": "",
-          "flags": [
-            "不可交易"
-          ]
-        },
-        {
-          "name": "路西斯王子的打底裤",
-          "category": "腿部防具",
-          "description": "",
-          "flags": [
-            "不可交易"
-          ]
-        },
-        {
-          "name": "路西斯王子的皮靴",
-          "category": "脚部防具",
-          "description": "",
-          "flags": [
-            "不可交易"
-          ]
-        },
-        {
-          "name": "雷迦利亚G型取车证",
-          "category": "其他",
-          "description": "获得新坐骑。\r\n雷迦利亚G型的取车证明。",
-          "flags": [
-            "唯一持有",
-            "不可交易",
-            "不可丢弃"
-          ]
-        },
-        {
-          "name": "发型样式：诺克提斯",
-          "category": "杂货",
-          "description": "上面记载着特殊的发型。\r\n使用后可在美容师那里选择此发型。\r\n硌狮族除外",
-          "flags": [
-            "唯一持有",
-            "不可交易",
-            "不可丢弃"
-          ]
-        },
-        {
-          "name": "九宫幻卡：诺克提斯·路西斯·切拉姆",
-          "category": "九宫幻卡",
-          "description": "九宫幻卡对局时所用的卡片。\r\n编号外14\r\n稀有度：★★★★★",
-          "flags": [
-            "不可交易"
-          ]
-        },
-        {
-          "name": "管弦乐琴乐谱：锤头鲨",
-          "category": "管弦乐琴乐谱",
-          "description": "在管弦乐琴乐谱集中加入谱有«锤头鲨»旋律的管弦乐琴乐谱。",
-          "flags": [
-            "唯一持有",
-            "不可交易",
-            "不可丢弃"
-          ]
-        },
-        {
-          "name": "管弦乐琴乐谱：幻想圆舞曲",
-          "category": "管弦乐琴乐谱",
-          "description": "在管弦乐琴乐谱集中加入谱有«幻想圆舞曲»旋律的管弦乐琴乐谱。",
-          "flags": [
-            "唯一持有",
-            "不可交易",
-            "不可丢弃"
-          ]
-        },
-        {
-          "name": "管弦乐琴乐谱：休息与反省",
-          "category": "管弦乐琴乐谱",
-          "description": "在管弦乐琴乐谱集中加入谱有«休息与反省»旋律的管弦乐琴乐谱。",
-          "flags": [
-            "唯一持有",
-            "不可交易",
-            "不可丢弃"
-          ]
-        },
-        {
-          "name": "管弦乐琴乐谱：黑暗遮蔽",
-          "category": "管弦乐琴乐谱",
-          "description": "在管弦乐琴乐谱集中加入谱有«黑暗遮蔽»旋律的管弦乐琴乐谱。",
-          "flags": [
-            "唯一持有",
-            "不可交易",
-            "不可丢弃"
-          ]
-        },
-        {
-          "name": "管弦乐琴乐谱：夜之启示",
-          "category": "管弦乐琴乐谱",
-          "description": "在管弦乐琴乐谱集中加入谱有«夜之启示»旋律的管弦乐琴乐谱。",
-          "flags": [
-            "唯一持有",
-            "不可交易",
-            "不可丢弃"
-          ]
-        },
-        {
-          "name": "管弦乐琴乐谱：快速加油",
-          "category": "管弦乐琴乐谱",
-          "description": "在管弦乐琴乐谱集中加入谱有«快速加油»旋律的管弦乐琴乐谱。",
-          "flags": [
-            "唯一持有",
-            "不可交易",
-            "不可丢弃"
-          ]
-        }
-      ],
-      "sourceUrl": "https://actff1.web.sdo.com/project/20260915ffxv/index.html",
-      "lastVerifiedAt": "2026-10-09T07:48:42.884Z",
-      "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393210"
     },
     {
       "id": "seasonal-aae61e8dfaea",
@@ -268,7 +123,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-10-09T07:48:49.401Z"
+      "lastVerifiedAt": "2026-10-13T18:22:03.578Z"
     },
     {
       "id": "seasonal-c5a1b1e9df45",
@@ -430,7 +285,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
-      "lastVerifiedAt": "2026-10-09T07:48:47.113Z",
+      "lastVerifiedAt": "2026-10-13T18:21:59.980Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393660"
     }
   ],
