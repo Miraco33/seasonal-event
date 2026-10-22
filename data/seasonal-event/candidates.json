@@ -1,9 +1,6 @@
 {
   "schemaVersion": 1,
   "status": "alert",
-  "code": "candidate_discovery_failed",
-  "candidates": [],
-  "failedDiscoverySources": [
-    "https://cqnews.web.sdo.com/api/news/newsList?gameCode=ff&CategoryCode=8324%2C8325%2C8326%2C8327%2C5309%2C5310%2C5311%2C5312%2C5313&pageIndex=0&pageSize=20"
-  ]
+  "code": "event_ending_without_candidate",
+  "candidates": []
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 10,
-  "publishedAt": "2026-10-21T18:26:45.156Z",
+  "dataVersion": 11,
+  "publishedAt": "2026-10-22T00:30:24.181Z",
   "events": [
     {
       "id": "seasonal-090dc058eda9",
@@ -24,7 +24,7 @@
       "achievementId": 3945,
       "rewards": [],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261005All_Saints_Wake/hjwff6jkcti4/index.html",
-      "lastVerifiedAt": "2026-10-21T18:26:39.265Z",
+      "lastVerifiedAt": "2026-10-22T00:30:08.052Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393960"
     },
     {
@@ -123,7 +123,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-10-21T18:26:44.967Z"
+      "lastVerifiedAt": "2026-10-22T00:30:16.468Z"
     },
     {
       "id": "seasonal-c5a1b1e9df45",
@@ -285,16 +285,12 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
-      "lastVerifiedAt": "2026-10-20T18:22:34.972Z",
+      "lastVerifiedAt": "2026-10-22T00:30:13.456Z",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393660"
     }
   ],
   "collectionStatus": {
     "status": "alert",
-    "code": "candidate_discovery_failed",
-    "unavailableSources": [
-      "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393660",
-      "https://cqnews.web.sdo.com/api/news/newsList?gameCode=ff&CategoryCode=8324%2C8325%2C8326%2C8327%2C5309%2C5310%2C5311%2C5312%2C5313&pageIndex=0&pageSize=20"
-    ]
+    "code": "event_ending_without_candidate"
   }
 }
