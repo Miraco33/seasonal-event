@@ -2,15 +2,17 @@ import { createHash } from "node:crypto";
 import type { CollectorConfiguration, EventMetadataOverride } from "./configuration.js";
 import type { DiscoveryCandidate } from "./discovery.js";
 import { candidateUrlKey, extractAnnouncementText } from "./discovery.js";
-import type { EventsDocument, SeasonalEvent } from "./models.js";
+import type { EventsDocument, PendingSeasonalEvent, SeasonalEvent } from "./models.js";
 import { retryOperation, type NetworkOptions } from "./network.js";
-import { collectEvents, parseTimeWindow, type SourceOptions } from "./source.js";
+import { collectEvents, parseConditionalTimeWindow, parseTimeWindow, type ConditionalTimeWindow, type SourceOptions } from "./source.js";
 import { validateDocument } from "./validate.js";
 
 export interface SourceFailure { url: string; message: string }
 export interface ReviewCandidate extends DiscoveryCandidate {
   stableEventId: string;
   reviewGaps: string[];
+  knownStartAt?: string;
+  officialEndCondition?: string;
 }
 
 export function stableEventId(url: string, configured: Record<string, string>): string {
@@ -29,18 +31,20 @@ export async function collectAutomaticEvents(
     collect?: (urls: string[], options: SourceOptions) => Promise<SeasonalEvent[]>;
     fetch?: typeof globalThis.fetch;
   } = {},
-): Promise<{ events: SeasonalEvent[]; failures: SourceFailure[]; enrichmentIssues: Array<SourceFailure & { code: string }>;
+): Promise<{ events: SeasonalEvent[]; pendingEvents: PendingSeasonalEvent[]; failures: SourceFailure[]; enrichmentIssues: Array<SourceFailure & { code: string }>;
   reviewCandidates: ReviewCandidate[]; automaticSourceCount: number }> {
   const fetchImpl = dependencies.fetch ?? globalThis.fetch;
   const configuredIds = { ...configuration.eventIds };
   const sources = new Map<string, string>();
   const candidateByKey = new Map<string, DiscoveryCandidate>();
   const previousByKey = new Map<string, SeasonalEvent>();
+  const previousPendingByKey = new Map<string, PendingSeasonalEvent>();
   const ignored = new Set(configuration.ignoredCandidateUrls.map(sourceKey));
   const allowedHosts = new Set(configuration.allowedCandidateHosts);
   const failures: SourceFailure[] = [];
   const enrichmentIssues: Array<SourceFailure & { code: string }> = [];
   const metadataFallbacks: Record<string, EventMetadataOverride> = {};
+  const conditionalTimeFallbacks: Record<string, ConditionalTimeWindow> = {};
   const announcements = new Map<string, string>();
 
   for (const event of previous?.events ?? []) {
@@ -51,6 +55,15 @@ export async function collectAutomaticEvents(
       sources.set(sourceKey(event.sourceUrl), event.sourceUrl);
       configuredIds[event.sourceUrl] = event.id;
       if (event.announcementUrl) announcements.set(sourceKey(event.sourceUrl), event.announcementUrl);
+    }
+  }
+  for (const event of previous?.pendingEvents ?? []) {
+    const key = sourceKey(event.sourceUrl);
+    previousPendingByKey.set(key, event);
+    if (!ignored.has(key)) {
+      sources.set(key, event.sourceUrl);
+      configuredIds[event.sourceUrl] = event.id;
+      if (event.announcementUrl) announcements.set(key, event.announcementUrl);
     }
   }
   for (const url of configuration.approvedSourceUrls) sources.set(sourceKey(url), url);
@@ -72,7 +85,9 @@ export async function collectAutomaticEvents(
     let text = candidate?.announcementText;
     let headline = candidate?.title;
     const announcementUrl = announcements.get(key);
-    if (!text && announcementUrl) {
+    // A saved candidate is not a fresh authoritative time check. Pending
+    // deadlines must be re-read before extending their reminder freshness.
+    if (announcementUrl && (!text || previousPendingByKey.has(key) || parseConditionalTimeWindow(text))) {
       try {
         const detail = await readAnnouncement(announcementUrl, fetchImpl, networkOptions);
         text = detail.text;
@@ -85,6 +100,8 @@ export async function collectAutomaticEvents(
       }
     }
     const window = text ? parseTimeWindow(text) : null;
+    const conditionalWindow = text ? parseConditionalTimeWindow(text) : null;
+    if (conditionalWindow) conditionalTimeFallbacks[id] = conditionalWindow;
     metadataFallbacks[id] = {
       ...(headline?.trim() ? { title: headline.replace(/^【季节活动】\s*/, "").trim() } : {}),
       ...(window ?? {}),
@@ -93,17 +110,21 @@ export async function collectAutomaticEvents(
 
   const announcementFailures = new Set(failures.map(failure => failure.url));
   const urls = [...sources].filter(([key]) => !announcementFailures.has(announcements.get(key) ?? "")).map(([, url]) => url);
+  const collectedPending: PendingSeasonalEvent[] = [];
   const collected = urls.length === 0 ? [] : await (dependencies.collect ?? collectEvents)(urls, {
     ...networkOptions,
     eventIds: configuredIds,
     overrides: configuration.overrides,
     metadataFallbacks,
+    conditionalTimeFallbacks,
+    onPendingEvent: event => collectedPending.push(event),
     allowPartial: true,
     imageRecognitionAsOf: now.toISOString(),
     onSourceError: (url, error) => failures.push({ url, message: message(error) }),
     onEnrichmentIssue: (url, code, message) => enrichmentIssues.push({ url, code, message }),
   });
   const events = new Map<string, SeasonalEvent>();
+  const pendingEvents = new Map<string, PendingSeasonalEvent>();
   const approved = new Set(configuration.approvedSourceUrls.map(sourceKey));
   for (const event of collected) {
     const key = sourceKey(event.sourceUrl);
@@ -113,11 +134,23 @@ export async function collectAutomaticEvents(
       if (Date.parse(event.endAt) > now.getTime() || approved.has(key)) events.set(key, withAnnouncement);
     } catch (error) { failures.push({ url: event.sourceUrl, message: message(error) }); }
   }
+  for (const event of collectedPending) {
+    const key = sourceKey(event.sourceUrl);
+    const withAnnouncement = { ...event, ...(announcements.has(key) ? { announcementUrl: announcements.get(key) } : {}) };
+    try {
+      validateDocument({ schemaVersion: 2, dataVersion: 1, publishedAt: now.toISOString(), events: [],
+        pendingEvents: [withAnnouncement], collectionStatus: { status: "alert", code: "candidate_review_required" } });
+      if (events.has(key)) throw new Error(`activity appeared as both scheduled and pending: ${event.id}`);
+      pendingEvents.set(key, withAnnouncement);
+    } catch (error) { failures.push({ url: event.sourceUrl, message: message(error) }); }
+  }
   for (const [key, url] of sources) {
-    if (events.has(key)) continue;
+    if (events.has(key) || pendingEvents.has(key)) continue;
     const old = previousByKey.get(key);
     const sourceFailed = failures.some(failure => sourceKey(failure.url) === key || failure.url === announcements.get(key));
     if (old && sourceFailed) events.set(key, old);
+    const oldPending = previousPendingByKey.get(key);
+    if (oldPending && sourceFailed) pendingEvents.set(key, oldPending);
   }
   const reviewCandidates: ReviewCandidate[] = [];
   for (const [key, candidate] of candidateByKey) {
@@ -128,10 +161,19 @@ export async function collectAutomaticEvents(
       reviewGaps: ["required_title_or_time_not_verified"],
     });
   }
-  const retainedEnrichmentIssues = enrichmentIssues.filter(issue => events.has(sourceKey(issue.url)));
+  for (const [key, event] of pendingEvents) {
+    if (reviewCandidates.some(candidate => sourceKey(candidate.url) === key)) continue;
+    const candidate = candidateByKey.get(key) ?? { url: event.sourceUrl, title: event.title,
+      discoveredFrom: event.announcementUrl ?? event.sourceUrl, sourceType: "discovered" as const,
+      matchedKeywords: [], reviewStatus: "pending" as const };
+    reviewCandidates.push({ ...candidate, stableEventId: event.id, reviewGaps: ["end_time_not_announced"],
+      knownStartAt: event.startAt, officialEndCondition: event.endCondition });
+  }
+  const retainedEnrichmentIssues = enrichmentIssues.filter(issue => events.has(sourceKey(issue.url)) || pendingEvents.has(sourceKey(issue.url)));
   for (const issue of retainedEnrichmentIssues) {
     const key = sourceKey(issue.url);
-    if (reviewCandidates.some(candidate => sourceKey(candidate.url) === key)) continue;
+    const existingReview = reviewCandidates.find(candidate => sourceKey(candidate.url) === key);
+    if (existingReview) { if (!existingReview.reviewGaps.includes(issue.code)) existingReview.reviewGaps.push(issue.code); continue; }
     const candidate = candidateByKey.get(key);
     const event = events.get(key);
     reviewCandidates.push({ ...(candidate ?? { url: issue.url, title: event?.title ?? "Official task image", discoveredFrom: issue.url,
@@ -140,6 +182,7 @@ export async function collectAutomaticEvents(
   }
   return {
     events: [...events.values()].sort((a, b) => a.id.localeCompare(b.id)),
+    pendingEvents: [...pendingEvents.values()].sort((a, b) => a.id.localeCompare(b.id)),
     failures,
     enrichmentIssues: retainedEnrichmentIssues,
     reviewCandidates,
@@ -149,7 +192,7 @@ export async function collectAutomaticEvents(
 
 export function legacyEvents(document: EventsDocument): SeasonalEvent[] {
   return document.events.filter(event => {
-    try { validateDocument({ ...document, schemaVersion: 1, events: [event], collectionStatus: undefined }); return true; }
+    try { validateDocument({ ...document, schemaVersion: 1, pendingEvents: undefined, events: [event], collectionStatus: undefined }); return true; }
     catch { return false; }
   }).map(({ announcementUrl: _announcementUrl, ...event }) => event);
 }

@@ -206,6 +206,9 @@
       font-size: 1.22rem;
     }
 
+    .event-top > div { min-width: 0; }
+    .event-card h3, .time, .details span { overflow-wrap: anywhere; }
+
     .time {
       margin: 0;
       color: var(--muted);
@@ -222,6 +225,22 @@
       font-size: 0.75rem;
       font-weight: 750;
     }
+
+    .tag.pending {
+      color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    #pending-section { margin-top: 36px; }
+
+    .pending-note, .verification {
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.7;
+    }
+
+    .verification.stale { color: var(--warn); font-weight: 750; }
 
     .details {
       display: flex;
@@ -306,7 +325,7 @@
 
     <section class="install-panel" aria-labelledby="install-heading">
       <h2 id="install-heading">游戏内在线安装</h2>
-      <p>在 <strong>/xlsettings → Experimental → Custom Plugin Repositories</strong> 中添加此地址，再到 <strong>/xlplugins</strong> 搜索 Seasonal Event。1.1.0 支持自动收录游戏内限时联动活动。</p>
+      <p>在 <strong>/xlsettings → Experimental → Custom Plugin Repositories</strong> 中添加此地址，再到 <strong>/xlplugins</strong> 搜索 Seasonal Event。1.2.0 支持游戏内限时联动，并单独展示结束日期未公布的活动资料；开放情况请查看官网。</p>
       <div class="repo-link">
         <code id="repo-url">https://raw.githubusercontent.com/Miraco33/seasonal-event/refs/heads/main/repo.json</code>
         <button id="copy-repo" type="button">复制仓库链接</button>
@@ -326,6 +345,14 @@
     <section aria-labelledby="upcoming-heading">
       <div class="section-head"><h2 id="upcoming-heading">即将开始</h2></div>
       <div id="upcoming" class="events" aria-live="polite"></div>
+    </section>
+
+    <section id="pending-section" aria-labelledby="pending-heading">
+      <div class="section-head">
+        <h2 id="pending-heading">结束日期未公布</h2>
+        <span id="pending-count" class="count"></span>
+      </div>
+      <div id="pending-events" class="events" aria-live="polite"></div>
     </section>
 
     <footer>
@@ -369,7 +396,24 @@
       }
     }
 
-    function createEventCard(event, upcoming = false) {
+    function knownTime(value) {
+      return typeof value === "string" && /(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
+    }
+
+    function reliablePendingEvent(event) {
+      if (!event || typeof event !== "object" || Array.isArray(event) || Object.hasOwn(event, "endAt")) return false;
+      const source = safeSourceUrl(event.sourceUrl);
+      return [event.id, event.title, event.endCondition].every(value => typeof value === "string" && value.trim()) &&
+        knownTime(event.startAt) && knownTime(event.lastVerifiedAt) && source && new URL(source).protocol === "https:";
+    }
+
+    function hasMapLocation(location) {
+      return location && Number.isInteger(location.territoryId) && location.territoryId > 0 &&
+        Number.isInteger(location.mapId) && location.mapId > 0 &&
+        [location.x, location.y, location.z].every(Number.isFinite);
+    }
+
+    function createEventCard(event, upcoming = false, pending = false, now = Date.now()) {
       const card = document.createElement("article");
       card.className = "event-card";
 
@@ -380,24 +424,40 @@
       title.textContent = event.title || "未命名活动";
       const time = document.createElement("p");
       time.className = "time";
-      time.textContent = `${formatDate(event.startAt)} 至 ${formatDate(event.endAt)}（北京时间）`;
+      time.textContent = pending
+        ? `开始：${formatDate(event.startAt)}（北京时间）；结束：${event.endCondition}`
+        : `${formatDate(event.startAt)} 至 ${formatDate(event.endAt)}（北京时间）`;
       heading.append(title, time);
       const tag = document.createElement("span");
-      tag.className = "tag";
-      tag.textContent = upcoming ? "即将开始" : "进行中";
+      tag.className = pending ? "tag pending" : "tag";
+      tag.textContent = pending ? "结束日期待定" : upcoming ? "即将开始" : "进行中";
       top.append(heading, tag);
       card.append(top);
+
+      if (pending) {
+        const note = document.createElement("p");
+        note.className = "pending-note";
+        note.textContent = "开放情况请查看官网。";
+        const verification = document.createElement("p");
+        const stale = now - Date.parse(event.lastVerifiedAt) > 24 * 60 * 60 * 1000;
+        verification.className = stale ? "verification stale" : "verification";
+        verification.textContent = `${stale ? "资料待重新核验；" : ""}最近核验：${formatDate(event.lastVerifiedAt)}（北京时间）`;
+        card.append(note, verification);
+      }
 
       const details = document.createElement("div");
       details.className = "details";
       const quest = document.createElement("span");
-      quest.textContent = `任务：${event.questName || "待确认"}`;
+      quest.textContent = `任务：${typeof event.questName === "string" && event.questName.trim() ? event.questName : "待确认"}`;
       const npc = document.createElement("span");
-      npc.textContent = `接取 NPC：${event.questNpc || "待确认"}`;
+      npc.textContent = `接取 NPC：${typeof event.questNpc === "string" && event.questNpc.trim() ? event.questNpc : "待确认"}`;
       const rewards = document.createElement("span");
-      rewards.textContent = event.rewards?.length ? `奖励：${event.rewards.length} 项` : "奖励：官网信息尚未提取";
+      const rewardCount = pending
+        ? Array.isArray(event.rewards) ? event.rewards.filter(reward => reward && typeof reward.name === "string" && reward.name.trim()).length : 0
+        : event.rewards?.length;
+      rewards.textContent = rewardCount ? `奖励：${rewardCount} 项` : "奖励：官网信息尚未提取";
       details.append(quest, npc, rewards);
-      if (!event.location) {
+      if (!(pending ? hasMapLocation(event.location) : event.location)) {
         const map = document.createElement("span");
         map.textContent = "接取坐标尚未核验，插件地图按钮不可用";
         details.append(map);
@@ -445,9 +505,27 @@
         setText("active-count", `${active.length} 个`);
         setText("version", `v${data.dataVersion} / schema ${data.schemaVersion}`);
         setText("published", formatDate(data.publishedAt));
-        setText("total-count", `共收录 ${data.events.length} 个活动`);
 
         container.replaceChildren();
+        const pendingContainer = document.getElementById("pending-events");
+        pendingContainer.replaceChildren();
+        const rawPending = data.pendingEvents === undefined ? [] : data.pendingEvents;
+        const pending = Array.isArray(rawPending) ? rawPending.filter(reliablePendingEvent)
+          .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt)) : [];
+        setText("pending-count", pending.length ? `${pending.length} 项待定资料` : "");
+        for (const event of pending) pendingContainer.append(createEventCard(event, false, true, now));
+        const incompletePending = !Array.isArray(rawPending) || pending.length !== rawPending.length;
+        setText("total-count", `共收录 ${data.events.length + pending.length} 个活动`);
+        if (collectionAlert && !incompletePending && pending.length > 0 && data.collectionStatus.code === "candidate_review_required")
+          state.textContent = "部分活动结束日期未公布";
+        if (incompletePending || pending.length === 0) {
+          const message = document.createElement("div");
+          message.className = "message";
+          message.textContent = incompletePending
+            ? "部分待定活动缺少必要资料，暂不展示，请查看采集诊断。"
+            : "暂无已核验的结束日期待定活动。";
+          pendingContainer.append(message);
+        }
         const upcomingContainer = document.getElementById("upcoming");
         const upcoming = data.events.filter(event => Date.parse(event.startAt) > now).sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt));
         upcomingContainer.replaceChildren();

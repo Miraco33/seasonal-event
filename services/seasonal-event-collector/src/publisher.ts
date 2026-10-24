@@ -57,7 +57,7 @@ export async function publish(
   prepared?: PublicationPreparation,
   allowDerivedEmpty = false,
 ): Promise<boolean> {
-  assertEventCollectionIsPublishable(document.events.length, allowDerivedEmpty ? "true" : process.env.ALLOW_EMPTY_EVENTS);
+  assertEventCollectionIsPublishable(document.events.length + (document.pendingEvents?.length ?? 0), allowDerivedEmpty ? "true" : process.env.ALLOW_EMPTY_EVENTS);
   const publication = prepared ?? await preparePublication();
   if (document.dataVersion !== publication.dataVersion) {
     throw new Error(`dataVersion ${document.dataVersion} does not match the next published version ${publication.dataVersion}`);
@@ -133,6 +133,8 @@ function publicationSemantics(document: unknown): unknown {
     if (key === "events" && Array.isArray(value)) {
       result[key] = value.map(event => canonicalizeEvent(event));
     } else if (value !== undefined) {
+      // Pending records retain verification time so old caches cannot keep
+      // generating reminders for an activity with an unannounced deadline.
       result[key] = canonicalize(value);
     }
   }

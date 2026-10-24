@@ -86,6 +86,7 @@ jobs:
             };
             const gapNames = {
               required_title_or_time_not_verified: "核验活动标题和完整起止时间",
+              end_time_not_announced: "官方尚未公布结束日期；已知信息已列出，请等待日期更新",
               detail_fields_not_inspected: "核对标题、时间、任务与 NPC",
               stable_event_id: "分配稳定活动 ID",
               location_override: "补充任务接取位置",

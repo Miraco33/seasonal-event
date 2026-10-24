@@ -30,6 +30,19 @@ const realAnnouncements = [
   },
 ];
 
+// Official news 394486, published 2026-10-21. The body excerpts deliberately
+// retain the non-calendar end condition; discovery must not require a full date.
+const gameplayLaunch = {
+  Id: 394486, Title: "金碟游乐场“魔光键影” 10月28日正式登场！", PublishDate: "2026/10/21 16:22:55", SortIndex: 0, OutLink: "",
+};
+const gameplayProject = "https://actff1.web.sdo.com/project/20261014keybound_brawler/o48khqshmn6e/index.html";
+const gameplayAnnouncementUrl = "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486";
+const gameplayContent = '<p>打字游戏&ldquo;魔光键影&rdquo;将在10月28日正式登场！</p>' +
+  '<p>&ldquo;魔光键影&rdquo;第一弹将与《FINAL FANTASY VII REMAKE Series》联动。</p>' +
+  '<p>游玩联动关卡，即可获得时装、坐骑、情感动作等丰富奖励道具！</p>' +
+  '<p>活动时间：2026年10月28日16:00～8.0版本更新维护前</p>' +
+  `<p><a href="${gameplayProject}">查看详情&gt;&gt;&gt;</a></p>`;
+
 function ordinaryNews(id: number, date = "2026/09/30 10:00:00") {
   return { Id: id, Title: "维护公告", PublishDate: date, SortIndex: 0, OutLink: "" };
 }
@@ -84,11 +97,102 @@ test("excludes commercial, community and offline crossovers before extracting th
     "【季节活动】莫古莫古★大收集限时开启！", "FF14商城联动道具限时开启", "FF14联动充值活动开启",
     "FF14联动周边活动开启", "FF14线下联动活动开启", "FF14社区联动活动开启", "FF14联动咖啡快闪活动开启",
     "FF14游戏内联动直播活动开启", "普通运营活动", "最终幻想14 x 最终幻想15制作人访谈", "糖豆人维护公告",
-    "FF14 x 肯德基联动限时开启", "FF14 x 新品牌联动活动开启", "金碟游乐场玩法指南",
+    "游戏内联动官网抽奖开启", "游戏内联动问卷活动开启", "游戏内联动网页游戏开启", "金碟游乐场玩法指南",
   ];
   assert.deepEqual(selectSeasonalNewsEntries(excludedTitles.map((Title, Id) => ({
     Id, Title, PublishDate: "2026/09/30 17:03:43", OutLink: "",
   }))), []);
+});
+
+test("reads the real gameplay launch body before accepting an unfamiliar crossover", async () => {
+  const requested: string[] = [];
+  assert.deepEqual(selectSeasonalNewsEntries([gameplayLaunch]).map(entry => entry.id), [394486]);
+  const result = await discoverFromSdoNewsApi(newsListUrl, {}, new Date("2026-04-28T00:00:00+08:00"), fixtureFetcher({
+    0: [gameplayLaunch],
+  }, { 394486: { Code: "0", Data: { Title: gameplayLaunch.Title, Content: gameplayContent, OutLink: "" } } }, requested));
+  assert.deepEqual(result.errors, []);
+  assert.ok(requested.includes(gameplayAnnouncementUrl));
+  assert.deepEqual(result.links.map(link => link.href), [gameplayProject]);
+  const candidates = selectCandidateLinks(result.links, [], [], [activityHost]);
+  assert.equal(candidates.length, 1);
+  assert.equal(candidates[0].title, gameplayLaunch.Title);
+  assert.equal(candidates[0].announcementUrl, gameplayAnnouncementUrl);
+  assert.match(candidates[0].announcementText ?? "", /FINAL FANTASY VII REMAKE Series/);
+  assert.match(candidates[0].announcementText ?? "", /8\.0版本更新维护前/);
+  assert.ok(candidates[0].matchedKeywords.includes("联动"));
+});
+
+test("uses gameplay evidence rather than a franchise or activity-name allowlist", async () => {
+  for (const title of ["金碟游乐场全新竞速正式登场", "全新玩法“星间赛跑”正式上线", "与未收录作品的联动即将开放"]) {
+    const result = await discoverFromSdoNewsApi(newsListUrl, {}, undefined, fixtureFetcher({
+      0: [{ ...gameplayLaunch, Title: title }],
+    }, { 394486: { Code: "0", Data: { Content: `<p>本次活动与一部新作品联动。完成联动任务即可获得奖励。</p><a href="${gameplayProject}">详情</a>` } } }));
+    assert.deepEqual(result.errors, []);
+    assert.equal(selectCandidateLinks(result.links, [], [], [activityHost]).length, 1, title);
+  }
+});
+
+test("inspects unfamiliar launch titles without accepting ordinary gameplay or promotional bodies", async () => {
+  const bodies = [
+    "全新玩法开放，游玩关卡即可获得奖励。", // No crossover.
+    "本次新品牌联动活动已经开启，详情请关注官网。", // No in-game evidence.
+    "本次玩法请参考新生庆典的操作说明。", // A past seasonal mention is not proof of a crossover.
+    "联动作品访谈活动开启，回顾往年的新生庆典。", // Nor does it establish playable game context.
+    "本次游戏内联动活动已经开启，参与官网抽奖即可获得坐骑。",
+    "本次游戏内联动活动已经开启，购买商城商品参与促销。",
+    "本次游戏内联动活动已经开启，线下门店兑换奖励。",
+    "本次游戏内联动活动已经开启，社区征集问卷答案。",
+    "本次游戏内联动莫古莫古★大收集活动开启。",
+  ];
+  for (const body of bodies) {
+    const result = await discoverFromSdoNewsApi(newsListUrl, {}, undefined, fixtureFetcher({
+      0: [gameplayLaunch],
+    }, { 394486: { Code: "0", Data: { Content: `<p>${body}</p><a href="${gameplayProject}">详情</a>` } } }));
+    assert.deepEqual(result.errors, []);
+    assert.deepEqual(result.links, [], body);
+    assert.deepEqual(selectCandidateLinks([{
+      href: gameplayProject, text: gameplayLaunch.Title, discoveredFrom: gameplayAnnouncementUrl,
+      announcementUrl: gameplayAnnouncementUrl, announcementText: body,
+    }], [], [], [activityHost]), [], body);
+  }
+  for (const title of ["FF14 x 肯德基联动限时开启", "FF14 x 新品牌联动活动开启"]) {
+    const result = await discoverFromSdoNewsApi(newsListUrl, {}, undefined, fixtureFetcher({
+      0: [{ ...gameplayLaunch, Title: title }],
+    }));
+    assert.deepEqual(result.links, [], title);
+  }
+});
+
+test("does not use untrusted or mismatched announcement text to approve a gameplay launch", () => {
+  for (const [discoveredFrom, announcementUrl] of [
+    ["https://untrusted.example/news", gameplayAnnouncementUrl],
+    ["https://untrusted.example/news", "https://untrusted.example/news"],
+    ["https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=other&id=394486", "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=other&id=394486"],
+    ["https://cqnews.web.sdo.com:444/api/news/newsDetail?gameCode=ff&id=394486", "https://cqnews.web.sdo.com:444/api/news/newsDetail?gameCode=ff&id=394486"],
+    ["https://user@cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486", "https://user@cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486"],
+  ]) {
+    assert.deepEqual(selectCandidateLinks([{
+      href: gameplayProject, text: gameplayLaunch.Title, discoveredFrom, announcementUrl,
+      announcementText: extractAnnouncementText({ Content: gameplayContent }),
+    }], [], [], [activityHost]), [], discoveredFrom);
+  }
+});
+
+test("reports unreadable launch bodies without treating an unverified direct URL as an accepted activity", async () => {
+  const result = await discoverFromSdoNewsApi(newsListUrl, {}, undefined, fixtureFetcher({
+    0: [{ ...gameplayLaunch, OutLink: gameplayProject }],
+  }, { 394486: new Error("detail unavailable") }));
+  assert.deepEqual(result.links, []);
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0].url, /newsDetail.*id=394486/);
+});
+
+test("keeps ordinary gameplay launches outside discovery without an opening announcement", () => {
+  assert.deepEqual(selectSeasonalNewsEntries([
+    { ...gameplayLaunch, Title: "金碟游乐场玩法指南" },
+    { ...gameplayLaunch, Title: "全新玩法操作手册" },
+    { ...gameplayLaunch, PublishDate: "2026/03/01 00:00:00" },
+  ], new Date("2026-04-28T00:00:00+08:00")), []);
 });
 
 test("accepts an explicitly identified in-game crossover and a named Gold Saucer celebration", () => {

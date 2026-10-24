@@ -42,6 +42,8 @@ public sealed class Plugin : IDalamudPlugin
     private readonly string cachePath;
     private readonly List<SeasonalEventData> activeEvents = new();
     private readonly List<SeasonalEventData> ignoredActiveEvents = new();
+    private readonly List<PendingEventData> pendingEvents = new();
+    private readonly List<PendingEventData> ignoredPendingEvents = new();
     private readonly HashSet<string> completionUnknownEventIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<string>> completionIssues = new(StringComparer.Ordinal);
     private CancellationTokenSource? refreshCts;
@@ -110,6 +112,8 @@ public sealed class Plugin : IDalamudPlugin
         wasLoggedIn = false;
         activeEvents.Clear();
         ignoredActiveEvents.Clear();
+        pendingEvents.Clear();
+        ignoredPendingEvents.Clear();
         completionUnknownEventIds.Clear();
         completionIssues.Clear();
         windowVisible = false;
@@ -186,6 +190,8 @@ public sealed class Plugin : IDalamudPlugin
     {
         activeEvents.Clear();
         ignoredActiveEvents.Clear();
+        pendingEvents.Clear();
+        ignoredPendingEvents.Clear();
         completionUnknownEventIds.Clear();
         completionIssues.Clear();
         nextEvaluationAt = now.AddMinutes(1);
@@ -207,6 +213,16 @@ public sealed class Plugin : IDalamudPlugin
         foreach (var item in document.Events)
         {
             if (now < item.StartAt.ToUniversalTime() || now >= item.EndAt.ToUniversalTime()) continue;
+            EvaluateItem(item, canNotify: true);
+        }
+        foreach (var item in document.PendingEvents ?? [])
+            EvaluateItem(item, PendingEventPolicy.CanAutoRemind(item, now));
+
+        if (shouldNotify) windowVisible = true;
+        if (stateChanged) config.Save();
+
+        void EvaluateItem(EventDetailsData item, bool canNotify)
+        {
             var state = character.Events.TryGetValue(item.Id, out var saved) && saved != null
                 ? saved
                 : new EventState();
@@ -218,7 +234,7 @@ public sealed class Plugin : IDalamudPlugin
                 if (quest is { } questRow)
                 {
                     questCompletionKnown = true;
-                    if (unlockState.IsQuestCompleted(questRow)) continue;
+                    if (unlockState.IsQuestCompleted(questRow)) return;
                 }
                 else
                 {
@@ -235,7 +251,7 @@ public sealed class Plugin : IDalamudPlugin
                 }
                 else if (unlockState.IsAchievementListLoaded)
                 {
-                    if (unlockState.IsAchievementComplete(achievementRow)) continue;
+                    if (unlockState.IsAchievementComplete(achievementRow)) return;
                 }
                 else if (!questCompletionKnown)
                 {
@@ -249,21 +265,20 @@ public sealed class Plugin : IDalamudPlugin
                 issues.Add("活动数据没有提供任务或成就完成映射；完成活动后可以手动忽略提醒。");
             if (state.Ignored)
             {
-                ignoredActiveEvents.Add(item);
-                continue;
+                if (item is PendingEventData ignoredPending) ignoredPendingEvents.Add(ignoredPending);
+                else ignoredActiveEvents.Add((SeasonalEventData)item);
+                return;
             }
             if (issues.Count > 0) completionIssues[item.Id] = issues;
 
-            activeEvents.Add(item);
-            if (state.LastNotifiedDate == today) continue;
+            if (item is PendingEventData pending) pendingEvents.Add(pending);
+            else activeEvents.Add((SeasonalEventData)item);
+            if (!canNotify || state.LastNotifiedDate == today) return;
             shouldNotify = true;
             stateChanged = true;
             state.LastNotifiedDate = today;
             character.Events[item.Id] = state;
         }
-
-        if (shouldNotify) windowVisible = true;
-        if (stateChanged) config.Save();
     }
 
     private string? GetCharacterId()
@@ -296,7 +311,10 @@ public sealed class Plugin : IDalamudPlugin
 
         var collectionAlert = dataService.Cached?.CollectionStatus?.Status == "alert";
         if (collectionAlert)
-            DrawWarning("活动数据采集存在告警，请查看官网；当前列表可能不完整。");
+            DrawWarning(dataService.Cached?.CollectionStatus?.Code == "candidate_review_required" &&
+                        dataService.Cached.PendingEvents is { Count: > 0 }
+                ? "部分活动的结束日期尚未公布，已在下方单独列出；实际开放情况请查看官网。"
+                : "活动数据采集存在告警，请查看官网；当前列表可能不完整。");
         if (dataService.Cached == null)
             TextWrappedUnformatted(dataService.LastError ?? "正在获取活动数据……");
         else if (activeEvents.Count == 0)
@@ -312,77 +330,38 @@ public sealed class Plugin : IDalamudPlugin
                 var startAt = TimeZoneInfo.ConvertTime(item.StartAt, ChinaTimeZone);
                 var endAt = TimeZoneInfo.ConvertTime(item.EndAt, ChinaTimeZone);
                 ImGui.TextUnformatted($"时间：{startAt:yyyy-MM-dd HH:mm} - {endAt:yyyy-MM-dd HH:mm} (UTC+8)");
-                ImGui.TextUnformatted($"任务：{item.QuestName ?? "官网信息尚未提取"}");
-                ImGui.TextUnformatted($"接取：{item.QuestNpc ?? "官网信息尚未提取"}");
-                ImGui.TextUnformatted($"等级：{item.QuestLevel?.ToString(CultureInfo.InvariantCulture) ?? "官网信息尚未提取"}");
-                if (completionUnknownEventIds.Contains(item.Id))
-                    DrawWarning("成就列表尚未加载，暂时无法确认该活动是否已经完成。");
-                if (completionIssues.TryGetValue(item.Id, out var issues))
+                DrawEventDetails(item);
+            }
+        }
+
+        if (pendingEvents.Count > 0 || ignoredPendingEvents.Count > 0)
+        {
+            ImGui.Separator();
+            ImGui.TextUnformatted("结束日期未公布");
+            TextWrappedUnformatted("以下为已发现且有官方依据的资料，不代表已确认正在开放；实际开放及截止时间请以官网为准。");
+            var now = DateTimeOffset.UtcNow;
+            foreach (var item in pendingEvents.ToArray())
+            {
+                ImGui.Separator();
+                ImGui.TextUnformatted(item.Title);
+                var startAt = TimeZoneInfo.ConvertTime(item.StartAt, ChinaTimeZone);
+                ImGui.TextUnformatted($"已公布开始时间：{startAt:yyyy-MM-dd HH:mm} (UTC+8)");
+                TextWrappedUnformatted($"官方结束条件：{item.EndCondition}（具体日期未公布）");
+                ImGui.TextUnformatted($"资料核验：{FormatChinaTime(item.LastVerifiedAt)}");
+                if (!PendingEventPolicy.IsFresh(item, now))
+                    DrawWarning("资料待重新核验，已停止自动提醒；实际开放情况请查看官网。");
+                else if (item.StartAt > now)
+                    ImGui.TextDisabled("尚未到已公布的开始时间，不自动提醒。");
+                DrawEventDetails(item);
+            }
+            if (ignoredPendingEvents.Count > 0 &&
+                ImGui.CollapsingHeader($"已忽略的待确认活动（{ignoredPendingEvents.Count}）"))
+            {
+                foreach (var item in ignoredPendingEvents.ToArray())
                 {
-                    foreach (var issue in issues) DrawWarning(issue);
-                }
-                ImGui.BeginDisabled(item.Location == null);
-                if (ImGui.Button($"打开任务地图##{item.Id}") && item.Location is { } location)
-                {
-                    if (gameGui.OpenMapWithMapLink(location.TerritoryId, location.MapId, new Vector3(location.X, location.Y, location.Z)))
-                        statusMessage = null;
-                    else
-                        statusMessage = "无法打开任务地图，请稍后重试。";
-                }
-                ImGui.EndDisabled();
-                if (item.Teleport != null && teleport.HasFunction)
-                {
+                    ImGui.TextUnformatted(item.Title);
                     ImGui.SameLine();
-                    if (ImGui.Button($"传送到附近##{item.Id}"))
-                    {
-                        try
-                        {
-                            if (!teleport.InvokeFunc(item.Teleport.AetheryteId, item.Teleport.SubIndex))
-                                statusMessage = "传送失败：目标可能未解锁或当前无法传送。";
-                            else
-                                statusMessage = null;
-                        }
-                        catch (Exception ex)
-                        {
-                            statusMessage = "传送插件不可用。";
-                            log.Warning(ex, "Teleporter IPC invocation failed");
-                        }
-                    }
-                }
-                else if (item.Teleport != null)
-                {
-                    ImGui.SameLine();
-                    ImGui.TextDisabled("启用 Teleporter 后可一键传送");
-                }
-                ImGui.SameLine();
-                if (ImGui.Button($"查看官网##source-{item.Id}")) OpenOfficialPage(item.SourceUrl);
-                ImGui.SameLine();
-                if (ImGui.Button($"忽略##{item.Id}")) Ignore(item);
-                if (item.Location == null) ImGui.TextDisabled("任务地图尚未核验，请查看官网。");
-                if (item.Rewards.Count > 0)
-                {
-                    ImGui.Text("奖励：");
-                    foreach (var reward in item.Rewards)
-                    {
-                        ImGui.Bullet();
-                        ImGui.SameLine();
-                        ImGui.TextUnformatted(reward.Name);
-                        if (ImGui.IsItemHovered() &&
-                            (!string.IsNullOrWhiteSpace(reward.Description) ||
-                             !string.IsNullOrWhiteSpace(reward.Category) ||
-                             reward.Flags.Count > 0))
-                        {
-                            ImGui.BeginTooltip();
-                            if (!string.IsNullOrWhiteSpace(reward.Category)) ImGui.TextUnformatted(reward.Category);
-                            if (!string.IsNullOrWhiteSpace(reward.Description)) TextWrappedUnformatted(reward.Description);
-                            if (reward.Flags.Count > 0) ImGui.TextUnformatted(string.Join(" | ", reward.Flags));
-                            ImGui.EndTooltip();
-                        }
-                    }
-                }
-                else
-                {
-                    ImGui.TextDisabled("奖励：官网信息尚未提取，请查看官网。");
+                    if (ImGui.Button($"恢复提醒##restore-pending-{item.Id}")) Restore(item);
                 }
             }
         }
@@ -430,7 +409,83 @@ public sealed class Plugin : IDalamudPlugin
         ImGui.End();
     }
 
-    private void Ignore(SeasonalEventData item)
+    private void DrawEventDetails(EventDetailsData item)
+    {
+        ImGui.TextUnformatted($"任务：{item.QuestName ?? "官网信息尚未提取"}");
+        ImGui.TextUnformatted($"接取：{item.QuestNpc ?? "官网信息尚未提取"}");
+        ImGui.TextUnformatted($"等级：{item.QuestLevel?.ToString(CultureInfo.InvariantCulture) ?? "官网信息尚未提取"}");
+        if (completionUnknownEventIds.Contains(item.Id))
+            DrawWarning("成就列表尚未加载，暂时无法确认该活动是否已经完成。");
+        if (completionIssues.TryGetValue(item.Id, out var issues))
+        {
+            foreach (var issue in issues) DrawWarning(issue);
+        }
+        ImGui.BeginDisabled(item.Location == null);
+        if (ImGui.Button($"打开任务地图##{item.Id}") && item.Location is { } location)
+        {
+            if (gameGui.OpenMapWithMapLink(location.TerritoryId, location.MapId, new Vector3(location.X, location.Y, location.Z)))
+                statusMessage = null;
+            else
+                statusMessage = "无法打开任务地图，请稍后重试。";
+        }
+        ImGui.EndDisabled();
+        if (item.Teleport != null && teleport.HasFunction)
+        {
+            ImGui.SameLine();
+            if (ImGui.Button($"传送到附近##{item.Id}"))
+            {
+                try
+                {
+                    if (!teleport.InvokeFunc(item.Teleport.AetheryteId, item.Teleport.SubIndex))
+                        statusMessage = "传送失败：目标可能未解锁或当前无法传送。";
+                    else
+                        statusMessage = null;
+                }
+                catch (Exception ex)
+                {
+                    statusMessage = "传送插件不可用。";
+                    log.Warning(ex, "Teleporter IPC invocation failed");
+                }
+            }
+        }
+        else if (item.Teleport != null)
+        {
+            ImGui.SameLine();
+            ImGui.TextDisabled("启用 Teleporter 后可一键传送");
+        }
+        ImGui.SameLine();
+        if (ImGui.Button($"查看官网##source-{item.Id}")) OpenOfficialPage(item.SourceUrl);
+        ImGui.SameLine();
+        if (ImGui.Button($"忽略##{item.Id}")) Ignore(item);
+        if (item.Location == null) ImGui.TextDisabled("任务地图尚未核验，请查看官网。");
+        if (item.Rewards.Count > 0)
+        {
+            ImGui.Text("奖励：");
+            foreach (var reward in item.Rewards)
+            {
+                ImGui.Bullet();
+                ImGui.SameLine();
+                ImGui.TextUnformatted(reward.Name);
+                if (ImGui.IsItemHovered() &&
+                    (!string.IsNullOrWhiteSpace(reward.Description) ||
+                     !string.IsNullOrWhiteSpace(reward.Category) ||
+                     reward.Flags.Count > 0))
+                {
+                    ImGui.BeginTooltip();
+                    if (!string.IsNullOrWhiteSpace(reward.Category)) ImGui.TextUnformatted(reward.Category);
+                    if (!string.IsNullOrWhiteSpace(reward.Description)) TextWrappedUnformatted(reward.Description);
+                    if (reward.Flags.Count > 0) ImGui.TextUnformatted(string.Join(" | ", reward.Flags));
+                    ImGui.EndTooltip();
+                }
+            }
+        }
+        else
+        {
+            ImGui.TextDisabled("奖励：官网信息尚未提取，请查看官网。");
+        }
+    }
+
+    private void Ignore(EventDetailsData item)
     {
         var characterId = GetCharacterId();
         if (characterId == null) return;
@@ -444,7 +499,7 @@ public sealed class Plugin : IDalamudPlugin
         EvaluateActiveEvents(DateTimeOffset.UtcNow);
     }
 
-    private void Restore(SeasonalEventData item)
+    private void Restore(EventDetailsData item)
     {
         var characterId = GetCharacterId();
         if (characterId == null) return;
@@ -524,6 +579,7 @@ public sealed class Plugin : IDalamudPlugin
             builder.AppendLine($"采集状态：{collectionStatus.Status}（{collectionStatus.Code}）");
         builder.AppendLine($"数据发布时间：{FormatChinaTime(document?.PublishedAt)}");
         builder.AppendLine($"活动条目：{document?.Events.Count.ToString(CultureInfo.InvariantCulture) ?? "不可用"}");
+        builder.AppendLine($"结束日期未公布：{(document == null ? "不可用" : (document.PendingEvents?.Count ?? 0).ToString(CultureInfo.InvariantCulture))}");
         builder.Append($"最近错误：{GetSafeFailureMessage()}");
         return builder.ToString();
     }

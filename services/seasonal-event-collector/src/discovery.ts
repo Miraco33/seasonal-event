@@ -37,7 +37,8 @@ const seasonalKeywords = [
   "heavensturn", "valentione", "littleladies", "hatching", "makeitrain", "goldsaucer", "moonfire", "therising", "allsaints", "starlight",
 ];
 const crossoverKeywords = ["联动", "最终幻想15", "最终幻想xv", "ffxv", "ff15", "糖豆人", "fallguys", "fall guys", "妖怪手表", "youkai-watch", "yokai-watch"];
-const excludedActivityPattern = /莫古.{0,6}(?:大收集|收集)|mogmog|mogtome|商城|充值|点卡|周边|线下|社区|快闪|咖啡|联名|商品销售|直播|征集|维护公告|停机维护|客户端更新/i;
+const excludedActivityPattern = /莫古.{0,6}(?:大收集|收集)|mogmog|mogtome|商城|充值|促销|抽奖|问卷|网页(?:游戏|活动)|点卡|周边|线下|社区|快闪|咖啡|联名|商品销售|直播|征集|维护公告|停机维护|客户端更新/i;
+const activityOpeningPattern = /再启|再临|再演|复刻|开启|限时|举办|回归|活动|登场|上线|开放|推出/;
 const maxNewsPages = 20;
 const maxNewsPageSize = 100;
 
@@ -162,6 +163,9 @@ export async function discoverFromSdoNewsApi(
           throw new Error(`official news detail returned an unsupported response: ${entry.id}`);
         }
         const announcementText = extractAnnouncementText(detail.Data);
+        // A launch headline can omit both the crossover and its playable
+        // context. Only the official detail can establish those missing facts.
+        if (!isSupportedActivity(entry.title) && !isSupportedCrossover(`${entry.title}\n${announcementText}`)) continue;
         const directLink = entry.outLink || (typeof detail.Data.OutLink === "string" ? detail.Data.OutLink.trim() : "");
         const detailLinks = directLink ? [directLink] : [...new Set(extractSeasonalDetailLinks(detail.Data))];
         for (const href of detailLinks) {
@@ -175,7 +179,9 @@ export async function discoverFromSdoNewsApi(
           });
         }
       } catch (error) {
-        if (entry.outLink) links.push({ href: entry.outLink, text: entry.title, discoveredFrom: pageUrl, sourceType: "discovered" });
+        if (entry.outLink && isSupportedActivity(entry.title)) {
+          links.push({ href: entry.outLink, text: entry.title, discoveredFrom: pageUrl, sourceType: "discovered" });
+        }
         errors.push({ url: detailUrl, message: error instanceof Error ? error.message : String(error) });
       }
     }
@@ -222,7 +228,7 @@ export function selectSeasonalNewsEntries(
   if (cutoff !== undefined && !Number.isFinite(cutoff)) throw new Error("news discovery cutoff must be a valid date");
   const result: Array<{ id: number; title: string; outLink: string; publishedAt: string }> = [];
   for (const entry of entries) {
-    if (!isRecord(entry) || typeof entry.Title !== "string" || !isSupportedActivity(entry.Title)) continue;
+    if (!isRecord(entry) || typeof entry.Title !== "string" || !mayDescribeActivity(entry.Title)) continue;
     if (!Number.isInteger(entry.Id)) throw new Error(`seasonal news entry has no numeric Id: ${entry.Title}`);
     if (typeof entry.PublishDate !== "string") throw new Error(`seasonal news entry has no publish date: ${entry.Title}`);
     const publishedAt = parseSdoPublishDate(entry.PublishDate);
@@ -306,8 +312,12 @@ export function selectCandidateLinks(
     const sourceType = link.sourceType ?? "discovered";
     const haystack = safeDecode(`${link.text} ${url}`).toLowerCase();
     if (excludedActivityPattern.test(haystack)) continue;
-    const matchedKeywords = [...seasonalKeywords, ...crossoverKeywords].filter(keyword => haystack.includes(keyword.toLowerCase()));
-    if (sourceType === "discovered" && (!new URL(url).pathname.startsWith("/project/") || !isSupportedActivity(haystack))) continue;
+    const trustedAnnouncement = link.announcementUrl && link.discoveredFrom === link.announcementUrl && isSdoNewsDetailApi(link.announcementUrl);
+    const context = trustedAnnouncement && typeof link.announcementText === "string"
+      ? `${haystack}\n${link.announcementText.slice(0, 100000).toLowerCase()}` : haystack;
+    const matchedKeywords = [...seasonalKeywords, ...crossoverKeywords].filter(keyword => context.includes(keyword.toLowerCase()));
+    if (sourceType === "discovered" && (!new URL(url).pathname.startsWith("/project/") ||
+        (!isSupportedActivity(haystack) && !isSupportedCrossover(context)))) continue;
 
     const candidate: DiscoveryCandidate = {
       url,
@@ -316,7 +326,7 @@ export function selectCandidateLinks(
       sourceType,
       matchedKeywords,
       reviewStatus: "pending",
-      ...(link.announcementUrl && link.discoveredFrom === link.announcementUrl && isSdoNewsDetailApi(link.announcementUrl) ? {
+      ...(trustedAnnouncement ? {
         announcementUrl: link.announcementUrl,
         ...(typeof link.announcementText === "string" ? { announcementText: link.announcementText.slice(0, 100000) } : {}),
       } : {}),
@@ -370,17 +380,33 @@ function isSupportedActivity(value: string): boolean {
   if (excludedActivityPattern.test(text)) return false;
   if (seasonalKeywords.some(keyword => keyword !== "金碟" && text.includes(keyword.toLowerCase())) ||
     /金碟(?:游乐场)?(?:庆典|狂欢|嘉年华)/.test(text)) return true;
+  return isSupportedCrossover(text);
+}
+
+function isSupportedCrossover(value: string): boolean {
+  const text = safeDecode(value).toLowerCase().replace(/\s+/g, " ");
+  if (excludedActivityPattern.test(text)) return false;
   const hasCrossover = /联动/.test(text);
-  const hasOpening = /再启|再临|再演|复刻|开启|限时|举办|回归|活动/.test(text);
+  const hasOpening = activityOpeningPattern.test(text);
   const hasGameContext = /游戏内/.test(text) ||
-    crossoverKeywords.slice(1).some(keyword => text.includes(keyword));
+    crossoverKeywords.slice(1).some(keyword => text.includes(keyword)) ||
+    /(?:游玩|挑战|完成|参与)[^。！？\n]{0,20}联动(?:关卡|任务|副本|玩法)/.test(text);
   return hasCrossover && hasOpening && hasGameContext;
+}
+
+function mayDescribeActivity(value: string): boolean {
+  if (isSupportedActivity(value)) return true;
+  const text = safeDecode(value).toLowerCase();
+  if (excludedActivityPattern.test(text)) return false;
+  // This is an inspection gate, not acceptance. Unknown crossover brands and
+  // gameplay launches still need authoritative body evidence before linking.
+  return /联动/.test(text) || (/(?:游戏内|金碟|玩法)/.test(text) && activityOpeningPattern.test(text));
 }
 
 function isSdoNewsDetailApi(value: string): boolean {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.toLowerCase() === "cqnews.web.sdo.com" &&
+    return url.protocol === "https:" && !url.username && !url.password && !url.port && url.hostname.toLowerCase() === "cqnews.web.sdo.com" &&
       url.pathname.toLowerCase() === "/api/news/newsdetail" && url.searchParams.get("gameCode") === "ff" &&
       /^\d+$/.test(url.searchParams.get("id") ?? "");
   } catch {

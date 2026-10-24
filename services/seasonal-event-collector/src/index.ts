@@ -88,7 +88,7 @@ async function main(): Promise<void> {
   const events = collection.events;
   reviewCandidates = collection.reviewCandidates;
   latestReviewCandidates = reviewCandidates;
-  assertEventCollectionIsPublishable(events.length, process.env.ALLOW_EMPTY_EVENTS);
+  assertEventCollectionIsPublishable(events.length + collection.pendingEvents.length, process.env.ALLOW_EMPTY_EVENTS);
 
   const readiness = assessNextEventReadiness(events, collection.reviewCandidates, new Date(), warningHours);
   const hasDiscoveryFailure = discovery.errors.length > 0;
@@ -104,6 +104,7 @@ async function main(): Promise<void> {
     dataVersion: publication.dataVersion,
     publishedAt: new Date().toISOString(),
     events,
+    ...(collection.pendingEvents.length > 0 ? { pendingEvents: collection.pendingEvents } : {}),
     collectionStatus: {
       status: status === "ok" ? "ok" : "alert",
       code,
@@ -146,6 +147,7 @@ async function main(): Promise<void> {
     discoverOnly: false,
     publishMode: process.env.PUBLISH_MODE || "filesystem",
     eventCount: events.length,
+    pendingEventCount: collection.pendingEvents.length,
     changed,
     approvedSourceCount: configuration.approvedSourceUrls.length,
     discoverySourceCount: configuration.discoveryUrls.length,

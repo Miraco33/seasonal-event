@@ -16,6 +16,22 @@ const ids = { [ff15Url]: "ffxv-2026", [yokaiUrl]: "yokai-2026", [fallGuysUrl]: "
 const noOverrides: CollectorOverrides = { locations: {}, rewards: {}, completion: {} };
 const verifiedOverrides: CollectorOverrides = { ...noOverrides, verifiedQuests: loadCollectorConfiguration().overrides.verifiedQuests };
 const indexedOverrides: CollectorOverrides = { ...noOverrides, gameIndex: loadCollectorConfiguration().overrides.gameIndex };
+
+test("a new how-to layout isolates the activity from its prerequisite and keeps an unknown deadline explicit", async () => {
+  const url = "https://actff1.web.sdo.com/project/new-keyboard-layout/index.html";
+  const html = `<html><head><title>新的游戏内联动</title></head><body>
+    <p>2026年10月28日16:00 ～ 8.0版本维护开始前</p><ul>
+    <li><h4>前往游乐场</h4><div class="ktg__howto__box"><p>NPC：挥金如土的年轻人</p><p>任意职业 10级</p></div></li>
+    <li><h3>完成活动任务「亮出你的键盘，迎战面前的敌人！」</h3><h4>亮出你的键盘，迎战面前的敌人！</h4>
+    <div class="ktg__howto__box"><p>NPC：猫型魔法人偶</p><p>任意职业 15级</p></div></li></ul></body></html>`;
+  const event = await parseFixture(url, html, { eventIds: { [url]: "pending-layout" }, metadataFallbacks: {} });
+  assert.equal(event.endAt, undefined);
+  assert.ok("endCondition" in event);
+  assert.equal(event.endCondition, "8.0版本维护开始前");
+  assert.equal(event.questName, "亮出你的键盘，迎战面前的敌人！");
+  assert.equal(event.questNpc, "猫型魔法人偶");
+  assert.equal(event.questLevel, 15);
+});
 const metadataFallbacks: SourceOptions["metadataFallbacks"] = {
   "ffxv-2026": { startAt: "2026-09-24T16:00:00+08:00", endAt: "2026-10-13T23:00:00+08:00" },
   "yokai-2026": { startAt: "2026-08-04T16:00:00+08:00", endAt: "2026-10-05T23:00:00+08:00" },

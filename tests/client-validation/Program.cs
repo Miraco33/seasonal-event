@@ -60,4 +60,83 @@ foreach (var field in new[] { "questId", "achievementId" })
 }
 var levelOverflow = Partial(); levelOverflow["events"]![0]!["questLevel"] = 2147483648L; Reject(levelOverflow);
 var versionOverflow = Partial(); versionOverflow["dataVersion"] = 2147483648L; Reject(versionOverflow);
+JsonObject WithPending()
+{
+    var value = Partial();
+    var pending = (JsonObject)value["events"]![0]!.DeepClone();
+    pending["id"] = "pending-open-ended";
+    pending.Remove("endAt");
+    pending["endCondition"] = "8.0版本维护前，具体结束日期尚未公布";
+    value["pendingEvents"] = new JsonArray(pending);
+    value["collectionStatus"] = new JsonObject { ["status"] = "alert", ["code"] = "candidate_review_required" };
+    return value;
+}
+Accept(WithPending().ToJsonString());
+var silentPending = WithPending(); silentPending.Remove("collectionStatus"); Reject(silentPending);
+var healthyPending = WithPending(); healthyPending["collectionStatus"] = new JsonObject { ["status"] = "ok", ["code"] = "healthy" }; Reject(healthyPending);
+var pendingOnly = WithPending(); pendingOnly["events"] = new JsonArray(); Accept(pendingOnly.ToJsonString());
+var emptyPending = Partial(); emptyPending["pendingEvents"] = new JsonArray(); Accept(emptyPending.ToJsonString());
+foreach (var content in new JsonNode?[] { new JsonArray(), null })
+{
+    var legacyPending = (JsonObject)original.DeepClone(); legacyPending["pendingEvents"] = content; Reject(legacyPending);
+}
+var nullPending = Partial(); nullPending["pendingEvents"] = null; Reject(nullPending);
+var nonArrayPending = Partial(); nonArrayPending["pendingEvents"] = "invalid"; Reject(nonArrayPending);
+var nullPendingItem = Partial(); nullPendingItem["pendingEvents"] = new JsonArray((JsonNode?)null); Reject(nullPendingItem);
+foreach (var condition in new string?[] { null, "", "  ", new string('长', 121) })
+{
+    var bad = WithPending(); bad["pendingEvents"]![0]!["endCondition"] = condition; Reject(bad);
+}
+var missingCondition = WithPending(); missingCondition["pendingEvents"]![0]!.AsObject().Remove("endCondition"); Reject(missingCondition);
+var longestCondition = WithPending(); longestCondition["pendingEvents"]![0]!["endCondition"] = new string('长', 120); Accept(longestCondition.ToJsonString());
+foreach (var end in new JsonNode?[] { JsonValue.Create("2026-12-31T23:00:00+08:00"), null })
+{
+    var bad = WithPending(); bad["pendingEvents"]![0]!["endAt"] = end; Reject(bad);
+}
+foreach (var field in new[] { "title", "startAt", "sourceUrl", "lastVerifiedAt", "rewards" })
+{
+    var bad = WithPending(); bad["pendingEvents"]![0]!.AsObject().Remove(field); Reject(bad);
+}
+var pendingTimeWithoutOffset = WithPending(); pendingTimeWithoutOffset["pendingEvents"]![0]!["startAt"] = "2026-10-25T15:00:00"; Reject(pendingTimeWithoutOffset);
+var badPendingMap = WithPending(); badPendingMap["pendingEvents"]![0]!["location"] = new JsonObject { ["territoryId"] = 144, ["mapId"] = 0, ["x"] = 0, ["y"] = 0, ["z"] = 0 }; Reject(badPendingMap);
+var crossListDuplicate = WithPending(); crossListDuplicate["pendingEvents"]![0]!["id"] = crossListDuplicate["events"]![0]!["id"]!.DeepClone(); Reject(crossListDuplicate);
+var pendingDuplicate = WithPending(); pendingDuplicate["pendingEvents"]!.AsArray().Add(pendingDuplicate["pendingEvents"]![0]!.DeepClone()); Reject(pendingDuplicate);
+var regularMissingEnd = WithPending(); regularMissingEnd["events"]![0]!.AsObject().Remove("endAt"); Reject(regularMissingEnd);
+
+void Check(bool result, string message)
+{
+    if (!result) throw new Exception(message);
+    checks++;
+}
+var parsedPending = EventDataValidation.DeserializeAndValidate(WithPending().ToJsonString());
+var cachedJson = System.Text.Json.JsonSerializer.Serialize(parsedPending, EventDataValidation.CreateJsonOptions());
+var restored = EventDataValidation.DeserializeAndValidate(cachedJson);
+Check(restored.PendingEvents is { Count: 1 } && restored.PendingEvents[0].EndCondition == parsedPending.PendingEvents![0].EndCondition,
+    "Cache roundtrip must preserve unknown deadline text.");
+Check(!JsonNode.Parse(cachedJson)!["pendingEvents"]![0]!.AsObject().ContainsKey("endAt"), "Cache must not invent a pending endAt.");
+var legacyJson = System.Text.Json.JsonSerializer.Serialize(EventDataValidation.DeserializeAndValidate(original.ToJsonString()), EventDataValidation.CreateJsonOptions());
+Check(!JsonNode.Parse(legacyJson)!.AsObject().ContainsKey("pendingEvents"), "Old schema cache must omit absent pendingEvents.");
+Accept(legacyJson);
+var now = new DateTimeOffset(2026, 10, 25, 0, 0, 0, TimeSpan.Zero);
+var policyItem = restored.PendingEvents![0];
+policyItem.StartAt = now.AddDays(-1);
+policyItem.LastVerifiedAt = now.AddHours(-1);
+Check(PendingEventPolicy.CanAutoRemind(policyItem, now), "A started, recently verified pending item can remind.");
+policyItem.LastVerifiedAt = now.AddHours(-24);
+Check(PendingEventPolicy.CanAutoRemind(policyItem, now), "Exactly 24 hours is still within the verification window.");
+policyItem.LastVerifiedAt = now.AddHours(-24).AddTicks(-1);
+Check(!PendingEventPolicy.CanAutoRemind(policyItem, now), "Old cache must stop automatic pending reminders.");
+policyItem.LastVerifiedAt = now.AddTicks(1);
+Check(!PendingEventPolicy.CanAutoRemind(policyItem, now), "A future verification timestamp cannot prove freshness.");
+policyItem.LastVerifiedAt = null;
+Check(!PendingEventPolicy.CanAutoRemind(policyItem, now), "Missing verification cannot allow a reminder.");
+policyItem.LastVerifiedAt = now;
+policyItem.StartAt = now.AddTicks(1);
+Check(PendingEventPolicy.IsFresh(policyItem, now) && !PendingEventPolicy.CanAutoRemind(policyItem, now),
+    "A future start remains manually viewable but cannot remind early.");
+policyItem.StartAt = now;
+Check(PendingEventPolicy.CanAutoRemind(policyItem, now), "The verified start boundary allows a reminder.");
+policyItem.LastVerifiedAt = now.AddDays(-10);
+var staleCache = EventDataValidation.DeserializeAndValidate(System.Text.Json.JsonSerializer.Serialize(restored, EventDataValidation.CreateJsonOptions()));
+Check(!PendingEventPolicy.CanAutoRemind(staleCache.PendingEvents![0], now), "Reading cached data must not refresh its verification time.");
 Console.WriteLine($"Client data validation: {checks} checks passed without Dalamud or a running game.");

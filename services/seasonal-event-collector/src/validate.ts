@@ -1,4 +1,4 @@
-import type { EventsDocument, SeasonalEvent } from "./models.js";
+import type { EventsDocument, PendingSeasonalEvent, SeasonalEvent } from "./models.js";
 
 export function validateDocument(document: EventsDocument): void {
   if (document.schemaVersion !== 1 && document.schemaVersion !== 2) throw new Error("unsupported schemaVersion");
@@ -8,6 +8,13 @@ export function validateDocument(document: EventsDocument): void {
 
   const ids = new Set<string>();
   for (const event of document.events) validateEvent(event, ids, document.schemaVersion === 2);
+  if (document.pendingEvents !== undefined) {
+    if (document.schemaVersion !== 2 || !Array.isArray(document.pendingEvents)) throw new Error("invalid pendingEvents");
+    for (const event of document.pendingEvents) validateEvent(event, ids, true, true);
+    if (document.pendingEvents.length > 0 && document.collectionStatus?.status !== "alert") {
+      throw new Error("pending events require an explicit collection alert");
+    }
+  }
   if (document.collectionStatus !== undefined) {
     const status = document.collectionStatus;
     if (!status || !["ok", "alert"].includes(status.status) || !status.code?.trim() ||
@@ -18,7 +25,7 @@ export function validateDocument(document: EventsDocument): void {
   }
 }
 
-function validateEvent(event: SeasonalEvent, ids: Set<string>, allowPartial: boolean): void {
+function validateEvent(event: SeasonalEvent | PendingSeasonalEvent, ids: Set<string>, allowPartial: boolean, pending = false): void {
   if (!event || typeof event !== "object") throw new Error("invalid event");
   if (typeof event.id !== "string" || !/^[a-z0-9][a-z0-9-]{2,63}$/.test(event.id)) throw new Error(`invalid event id: ${event.id}`);
   if (ids.has(event.id)) throw new Error(`duplicate event id: ${event.id}`);
@@ -37,8 +44,13 @@ function validateEvent(event: SeasonalEvent, ids: Set<string>, allowPartial: boo
   if (event.achievementId !== undefined && event.achievementId !== null && (!Number.isInteger(event.achievementId) || event.achievementId <= 0 || event.achievementId > 4294967295)) {
     throw new Error(`invalid achievementId: ${event.id}`);
   }
-  if (!isOffsetDateTime(event.startAt) || !isOffsetDateTime(event.endAt) || Date.parse(event.endAt) <= Date.parse(event.startAt)) {
+  if (!isOffsetDateTime(event.startAt) || (!pending &&
+      (!isOffsetDateTime(event.endAt as string) || Date.parse(event.endAt as string) <= Date.parse(event.startAt)))) {
     throw new Error(`invalid event window: ${event.id}`);
+  }
+  if (pending && (Object.hasOwn(event, "endAt") || !("endCondition" in event) ||
+      typeof event.endCondition !== "string" || !event.endCondition.trim() || event.endCondition.length > 120)) {
+    throw new Error(`invalid pending event end condition: ${event.id}`);
   }
   if (!allowPartial && !event.location) throw new Error(`missing location: ${event.id}`);
   if (event.location !== null && event.location !== undefined) {

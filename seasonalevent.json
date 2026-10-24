@@ -2,7 +2,7 @@
   "Author": "Miraco33",
   "Name": "Seasonal Event",
   "InternalName": "seasonalevent",
-  "AssemblyVersion": "1.1.0.0",
+  "AssemblyVersion": "1.2.0.0",
   "Description": "国服 Final Fantasy XIV 季节及游戏内限时联动活动提醒。支持每日提醒、完成状态判断、自动更新活动数据、地图旗标、离线缓存和采集告警；未核验坐标时禁用地图按钮。",
   "RepoUrl": "https://github.com/Miraco33/seasonal-event",
   "ApplicableVersion": "any",
@@ -21,6 +21,6 @@
   "CategoryTags": [
     "utility"
   ],
-  "Changelog": "1.1.0：修复季节及游戏内联动活动漏收录；支持自动更新已核验活动信息，缺少地图坐标时明确提示并禁用地图按钮，显示数据源采集告警。",
+  "Changelog": "1.2.0：自动识别更多官网游戏内联动；单独展示结束日期尚未公布的活动，保留官方结束条件；修复季节活动奖励提取，陈旧待定资料停止自动提醒。",
   "AcceptsFeedback": true
 }

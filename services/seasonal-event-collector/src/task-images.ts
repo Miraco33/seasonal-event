@@ -6,11 +6,11 @@ export interface TaskImageEvidence { text: string; imageUrls: string[]; lines: O
 export type ImageReader = (bytes: Buffer) => Promise<OcrResult>;
 
 export async function taskImageUrls(page: Page, questName: string | null): Promise<string[]> {
-  return page.locator(".quest, .fgs__howto__box, .content__event-info").evaluateAll((blocks, target) => {
+  return page.locator(".quest, .fgs__howto__box, .ktg__howto__box, .content__event-info").evaluateAll((blocks, target) => {
     if (!target) return [];
     const normalize = (value: string) => value.normalize("NFKC").replace(/\s+/g, "").toLowerCase();
     for (const block of blocks) {
-      const headingScope = block.matches(".fgs__howto__box") ? block.closest("li") : block;
+      const headingScope = block.matches(".fgs__howto__box, .ktg__howto__box") ? block.closest("li") : block;
       const headings = Array.from(headingScope?.querySelectorAll("h2,h3,h4") || []);
       if (!headings.some(heading => normalize(heading.textContent?.trim() || heading.querySelector("img")?.getAttribute("alt")?.trim() || "") === normalize(target))) continue;
       const images = Array.from(block.querySelectorAll(block.matches(".content__event-info") ? ".content__event-info__area > img" : "img"));

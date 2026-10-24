@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace SeasonalEvent;
@@ -17,6 +18,19 @@ public sealed class EventsDocument
     [JsonRequired]
     public List<SeasonalEventData> Events { get; set; } = new();
 
+    private List<PendingEventData>? pendingEvents;
+
+    [JsonPropertyName("pendingEvents")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<PendingEventData>? PendingEvents
+    {
+        get => pendingEvents;
+        set { pendingEvents = value; HasPendingEventsProperty = true; }
+    }
+
+    [JsonIgnore]
+    public bool HasPendingEventsProperty { get; private set; }
+
     [JsonPropertyName("collectionStatus")]
     public EventCollectionStatus? CollectionStatus { get; set; }
 }
@@ -33,7 +47,7 @@ public sealed class EventCollectionStatus
     public List<string> UnavailableSources { get; set; } = new();
 }
 
-public sealed class SeasonalEventData
+public abstract class EventDetailsData
 {
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
@@ -43,9 +57,6 @@ public sealed class SeasonalEventData
 
     [JsonPropertyName("startAt")]
     public DateTimeOffset StartAt { get; set; }
-
-    [JsonPropertyName("endAt")]
-    public DateTimeOffset EndAt { get; set; }
 
     [JsonPropertyName("questName")]
     public string? QuestName { get; set; }
@@ -80,6 +91,34 @@ public sealed class SeasonalEventData
 
     [JsonPropertyName("lastVerifiedAt")]
     public DateTimeOffset? LastVerifiedAt { get; set; }
+}
+
+public sealed class SeasonalEventData : EventDetailsData
+{
+    [JsonPropertyName("endAt")]
+    public DateTimeOffset EndAt { get; set; }
+}
+
+public sealed class PendingEventData : EventDetailsData
+{
+    [JsonPropertyName("endCondition")]
+    [JsonRequired]
+    public string EndCondition { get; set; } = string.Empty;
+
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? AdditionalProperties { get; set; }
+}
+
+public static class PendingEventPolicy
+{
+    public static readonly TimeSpan MaximumVerificationAge = TimeSpan.FromHours(24);
+
+    public static bool IsFresh(PendingEventData item, DateTimeOffset now) =>
+        item.LastVerifiedAt is { } verified && verified != default && verified <= now &&
+        now - verified <= MaximumVerificationAge;
+
+    public static bool CanAutoRemind(PendingEventData item, DateTimeOffset now) =>
+        item.StartAt != default && item.StartAt <= now && IsFresh(item, now);
 }
 
 public sealed class TeleportTarget

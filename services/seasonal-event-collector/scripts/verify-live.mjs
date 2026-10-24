@@ -43,7 +43,22 @@ try {
     const previous = publication.existingDocument;
     const collection = await collectAutomaticEvents(configuration, discovery.candidates, previous, asOf, { attempts: 2, baseDelayMs: 100 });
     assert.deepEqual(collection.failures, [], "all eligible official event pages must parse");
-    assert.equal(collection.reviewCandidates.length, new Set(collection.enrichmentIssues.map(issue => issue.url)).size,
+    const guardian = collection.events.find(event => event.sourceUrl.includes("20261005All_Saints_Wake"));
+    if (guardian) {
+      assert.equal(guardian.questNpc, "南瓜头女人");
+      assert.deepEqual([guardian.location?.displayX, guardian.location?.displayY], [10.2, 9.4]);
+      assert.equal(guardian.rewards.length, 8, "all eight official seasonal rewards must be extracted");
+    }
+    if (asOf >= new Date("2026-10-21T16:22:55+08:00")) {
+      const keyboard = [...collection.events, ...collection.pendingEvents].find(event => event.sourceUrl.includes("20261014keybound_brawler"));
+      assert.ok(keyboard, "the new official collaboration must never be silently omitted");
+      assert.equal(keyboard.questNpc, "猫型魔法人偶");
+      assert.deepEqual([keyboard.location?.displayX, keyboard.location?.displayY], [5.4, 7]);
+      assert.equal(keyboard.rewards.length, 20);
+      if (!keyboard.endAt) assert.match(keyboard.endCondition, /8\.0版本.*维护.*前/);
+    }
+    assert.equal(collection.reviewCandidates.length, new Set([...collection.enrichmentIssues.map(issue => issue.url),
+      ...collection.pendingEvents.map(event => event.sourceUrl)]).size,
       "only visible image-enrichment gaps may remain after core activity publication");
     for (const [url, dates] of expected) {
       const event = collection.events.find(event => event.sourceUrl === url);
@@ -69,23 +84,28 @@ try {
       }
     }
     const document = { schemaVersion: 2, dataVersion: publication.dataVersion, publishedAt: new Date().toISOString(),
-      events: collection.events, collectionStatus: collection.enrichmentIssues.length > 0
-        ? { status: "alert", code: "image_enrichment_incomplete" } : { status: "ok", code: "healthy" } };
+      events: collection.events, ...(collection.pendingEvents.length ? { pendingEvents: collection.pendingEvents } : {}),
+      collectionStatus: collection.enrichmentIssues.length > 0
+        ? { status: "alert", code: "image_enrichment_incomplete" } : collection.pendingEvents.length
+          ? { status: "alert", code: "candidate_review_required" } : { status: "ok", code: "healthy" } };
     validateDocument(document);
     const legacy = legacyEvents(document);
     assert.ok(legacy.length >= 1, "previously complete approved data must remain valid for legacy clients");
-    validateDocument({ ...document, schemaVersion: 1, events: legacy, collectionStatus: undefined });
+    validateDocument({ ...document, schemaVersion: 1, pendingEvents: undefined, events: legacy, collectionStatus: undefined });
     const before = existsSync(output) ? await readFile(output, "utf8") : undefined;
-    assert.equal(await publish(document, true, publication), round === 1, "dry-run must detect only semantic changes");
+    const expectChange = round === 1 || collection.pendingEvents.length > 0;
+    assert.equal(await publish(document, true, publication), expectChange, "pending verification freshness is a publication change");
     assert.equal(existsSync(output) ? await readFile(output, "utf8") : undefined, before, "dry-run must never alter the published feed");
     const changed = await publish(document, false, publication);
-    assert.equal(changed, round === 1, "repeated verified data must not create another version");
+    assert.equal(changed, expectChange, "only pending freshness or changed activity information creates another version");
     const stored = JSON.parse(await readFile(output, "utf8"));
-    assert.equal(stored.dataVersion, 1, "unchanged repeats must keep the first version");
+    assert.equal(stored.dataVersion, collection.pendingEvents.length ? round : 1);
     const summary = { round, eventCount: stored.events.length,
       activeCount: stored.events.filter(event => Date.parse(event.startAt) <= asOf.getTime() && asOf.getTime() < Date.parse(event.endAt)).length,
       upcomingCount: stored.events.filter(event => Date.parse(event.startAt) > asOf.getTime()).length,
       changed, elapsedMs: Date.now() - start, imageRecognitionIssues: collection.enrichmentIssues,
+      pendingFields: collection.pendingEvents.map(event => ({ title: event.title, startAt: event.startAt, endCondition: event.endCondition,
+        questName: event.questName, questNpc: event.questNpc, mapAvailable: event.location !== null, rewardCount: event.rewards.length })),
       fields: stored.events.map(event => ({ title: event.title, questName: event.questName, questNpc: event.questNpc,
         mapAvailable: event.location !== null, rewardCount: event.rewards.length })) };
     summaries.push(summary);

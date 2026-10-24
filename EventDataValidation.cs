@@ -20,6 +20,10 @@ public static class EventDataValidation
         if (document.DataVersion < 1) throw new InvalidDataException("活动数据版本无效");
         if (document.PublishedAt == default) throw new InvalidDataException("活动数据发布时间无效");
         if (document.Events == null) throw new InvalidDataException("活动列表缺失");
+        if (document.HasPendingEventsProperty && (document.SchemaVersion != 2 || document.PendingEvents == null))
+            throw new InvalidDataException("待确认活动列表只允许在数据格式 2 中提供，且不能为 null");
+        if (document.PendingEvents is { Count: > 0 } && document.CollectionStatus?.Status != "alert")
+            throw new InvalidDataException("存在待确认活动时必须明确提供采集告警");
         if (document.CollectionStatus is { } collectionStatus &&
             (collectionStatus.Status is not ("ok" or "alert") ||
              string.IsNullOrWhiteSpace(collectionStatus.Code) ||
@@ -30,45 +34,57 @@ public static class EventDataValidation
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var item in document.Events)
         {
-            if (item == null) throw new InvalidDataException("活动列表包含空项目");
-            if (!IsValidEventId(item.Id) || !ids.Add(item.Id))
-                throw new InvalidDataException("活动 ID 缺失或重复");
-            if (string.IsNullOrWhiteSpace(item.Title) ||
-                (document.SchemaVersion == 1 &&
-                 (string.IsNullOrWhiteSpace(item.QuestName) || string.IsNullOrWhiteSpace(item.QuestNpc))) ||
-                (item.QuestName != null && string.IsNullOrWhiteSpace(item.QuestName)) ||
-                (item.QuestNpc != null && string.IsNullOrWhiteSpace(item.QuestNpc)))
-                throw new InvalidDataException($"活动文本缺失或无效：{item.Id}");
-            if (item.StartAt == default || item.EndAt == default || item.EndAt <= item.StartAt)
+            ValidateDetails(item, ids, document.SchemaVersion == 1);
+            if (item.EndAt == default || item.EndAt <= item.StartAt)
                 throw new InvalidDataException($"活动时间无效：{item.Id}");
-            if (item.QuestLevel is <= 0) throw new InvalidDataException($"活动等级无效：{item.Id}");
-            if (item.QuestId is 0) throw new InvalidDataException($"任务映射无效：{item.Id}");
-            if (item.AchievementId is 0) throw new InvalidDataException($"成就映射无效：{item.Id}");
-            if (item.Location == null && document.SchemaVersion == 1)
-                throw new InvalidDataException($"活动地点缺失：{item.Id}");
-            if (item.Location is { } location)
-            {
-                if (location.TerritoryId == 0 || location.MapId == 0)
-                    throw new InvalidDataException($"活动地点无效：{item.Id}");
-                if (!float.IsFinite(location.X) || !float.IsFinite(location.Y) || !float.IsFinite(location.Z) ||
-                    Math.Abs(location.X) > 100000 || Math.Abs(location.Y) > 100000 || Math.Abs(location.Z) > 100000)
-                    throw new InvalidDataException($"活动坐标无效：{item.Id}");
-                if ((location.DisplayX.HasValue && !float.IsFinite(location.DisplayX.Value)) ||
-                    (location.DisplayY.HasValue && !float.IsFinite(location.DisplayY.Value)))
-                    throw new InvalidDataException($"活动显示坐标无效：{item.Id}");
-            }
-            if (item.Teleport is { AetheryteId: 0 })
-                throw new InvalidDataException($"传送目标无效：{item.Id}");
-            if (!TryNormalizeSourceUrl(item.SourceUrl, out _) ||
-                (item.AnnouncementUrl != null && !TryNormalizeSourceUrl(item.AnnouncementUrl, out _)) ||
-                !item.LastVerifiedAt.HasValue || item.LastVerifiedAt.Value == default)
-                throw new InvalidDataException($"活动来源无效：{item.Id}");
-            if (item.Rewards == null || (document.SchemaVersion == 1 && item.Rewards.Count == 0) ||
-                item.Rewards.Any(reward => reward == null || string.IsNullOrWhiteSpace(reward.Name) ||
-                    reward.Category == null || reward.Description == null || reward.Flags == null ||
-                    reward.Flags.Any(flag => flag == null)))
-                throw new InvalidDataException($"活动奖励无效：{item.Id}");
         }
+        foreach (var item in document.PendingEvents ?? [])
+        {
+            ValidateDetails(item, ids, requireComplete: false);
+            if (string.IsNullOrWhiteSpace(item.EndCondition) || item.EndCondition.Length > 120 ||
+                item.AdditionalProperties?.Keys.Any(key => string.Equals(key, "endAt", StringComparison.OrdinalIgnoreCase)) == true)
+                throw new InvalidDataException($"待确认活动必须提供有效的结束条件，且不能提供结束日期：{item.Id}");
+        }
+    }
+
+    private static void ValidateDetails(EventDetailsData item, HashSet<string> ids, bool requireComplete)
+    {
+        if (item == null) throw new InvalidDataException("活动列表包含空项目");
+        if (!IsValidEventId(item.Id) || !ids.Add(item.Id))
+            throw new InvalidDataException("活动 ID 缺失或重复");
+        if (string.IsNullOrWhiteSpace(item.Title) ||
+            (requireComplete && (string.IsNullOrWhiteSpace(item.QuestName) || string.IsNullOrWhiteSpace(item.QuestNpc))) ||
+            (item.QuestName != null && string.IsNullOrWhiteSpace(item.QuestName)) ||
+            (item.QuestNpc != null && string.IsNullOrWhiteSpace(item.QuestNpc)))
+            throw new InvalidDataException($"活动文本缺失或无效：{item.Id}");
+        if (item.StartAt == default) throw new InvalidDataException($"活动开始时间无效：{item.Id}");
+        if (item.QuestLevel is <= 0) throw new InvalidDataException($"活动等级无效：{item.Id}");
+        if (item.QuestId is 0) throw new InvalidDataException($"任务映射无效：{item.Id}");
+        if (item.AchievementId is 0) throw new InvalidDataException($"成就映射无效：{item.Id}");
+        if (item.Location == null && requireComplete)
+            throw new InvalidDataException($"活动地点缺失：{item.Id}");
+        if (item.Location is { } location)
+        {
+            if (location.TerritoryId == 0 || location.MapId == 0)
+                throw new InvalidDataException($"活动地点无效：{item.Id}");
+            if (!float.IsFinite(location.X) || !float.IsFinite(location.Y) || !float.IsFinite(location.Z) ||
+                Math.Abs(location.X) > 100000 || Math.Abs(location.Y) > 100000 || Math.Abs(location.Z) > 100000)
+                throw new InvalidDataException($"活动坐标无效：{item.Id}");
+            if ((location.DisplayX.HasValue && !float.IsFinite(location.DisplayX.Value)) ||
+                (location.DisplayY.HasValue && !float.IsFinite(location.DisplayY.Value)))
+                throw new InvalidDataException($"活动显示坐标无效：{item.Id}");
+        }
+        if (item.Teleport is { AetheryteId: 0 })
+            throw new InvalidDataException($"传送目标无效：{item.Id}");
+        if (!TryNormalizeSourceUrl(item.SourceUrl, out _) ||
+            (item.AnnouncementUrl != null && !TryNormalizeSourceUrl(item.AnnouncementUrl, out _)) ||
+            !item.LastVerifiedAt.HasValue || item.LastVerifiedAt.Value == default)
+            throw new InvalidDataException($"活动来源无效：{item.Id}");
+        if (item.Rewards == null || (requireComplete && item.Rewards.Count == 0) ||
+            item.Rewards.Any(reward => reward == null || string.IsNullOrWhiteSpace(reward.Name) ||
+                reward.Category == null || reward.Description == null || reward.Flags == null ||
+                reward.Flags.Any(flag => flag == null)))
+            throw new InvalidDataException($"活动奖励无效：{item.Id}");
     }
 
     public static bool TryNormalizeSourceUrl(string? value, out string normalized)

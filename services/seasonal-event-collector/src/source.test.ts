@@ -49,6 +49,11 @@ test("rejects collaboration navigation and instruction headings in favor of the 
   assert.equal(selectEventTitle(["活动概要", "关于任务的推进"], "最终幻想14官方网站"), null);
 });
 
+test("new collaboration navigation is not mistaken for its event title", () => {
+  assert.equal(selectEventTitle(["概要", "举办时间", "《某作品》联动关卡", "报酬", "参加方法"],
+    "新的联动活动 | 《最终幻想14》官方网站"), "新的联动活动");
+});
+
 test("recognizes a historical quest heading immediately preceding its requirements", () => {
   const body = "SEASONAL EVENT\n新生庆典与音乐的轨迹\n接受任务条件\n等级15";
   assert.equal(extractQuestName(body, "新生庆典与音乐的轨迹"), "新生庆典与音乐的轨迹");

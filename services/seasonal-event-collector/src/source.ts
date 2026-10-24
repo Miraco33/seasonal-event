@@ -1,6 +1,6 @@
 import { chromium, type Page } from "playwright";
 import { loadCollectorConfiguration, type CollectorOverrides, type EventMetadataOverride } from "./configuration.js";
-import type { EventReward, SeasonalEvent, TeleportTarget } from "./models.js";
+import type { EventReward, PendingSeasonalEvent, SeasonalEvent, TeleportTarget } from "./models.js";
 import { navigateWithRetry, type NetworkOptions } from "./network.js";
 import { resolveVerifiedQuest } from "./verified-quests.js";
 import { matchImageQuest, type AutomaticQuestDetails } from "./game-index.js";
@@ -18,6 +18,8 @@ export type SourceOptions = NetworkOptions & {
   imageReader?: ImageReader;
   imageEvidenceReader?: typeof readTaskImages;
   imageRecognitionAsOf?: string;
+  conditionalTimeFallbacks?: Record<string, ConditionalTimeWindow>;
+  onPendingEvent?: (event: PendingSeasonalEvent) => void;
 };
 
 export async function collectEvents(
@@ -37,7 +39,11 @@ export async function collectEvents(
     const events: SeasonalEvent[] = [];
     for (const url of sourceUrls) {
       try {
-        events.push(await parseDetailPage(page, url, options));
+        const event = await parseDetailPage(page, url, options);
+        if (event.endAt === undefined) {
+          if (!options.onPendingEvent) throw new Error(`official end date has not been announced: ${url}`);
+          options.onPendingEvent(event);
+        } else events.push(event);
       } catch (error) {
         if (!options.onSourceError) throw error;
         options.onSourceError(url, error);
@@ -53,7 +59,7 @@ export async function parseDetailPage(
   page: Page,
   url: string,
   options: SourceOptions = {},
-): Promise<SeasonalEvent> {
+): Promise<SeasonalEvent | PendingSeasonalEvent> {
   await navigateWithRetry(page, url, options);
   await page.waitForTimeout(1000);
   const body = await page.locator("body").innerText();
@@ -66,7 +72,8 @@ export async function parseDetailPage(
   const metadata = overrides.metadata?.[id];
   const fallback = options.metadataFallbacks?.[id];
   const parsedWindow = parseTimeWindow(body);
-  const startAt = metadata?.startAt ?? parsedWindow?.startAt ?? fallback?.startAt;
+  const conditionalWindow = parseConditionalTimeWindow(body) ?? options.conditionalTimeFallbacks?.[id];
+  const startAt = metadata?.startAt ?? parsedWindow?.startAt ?? conditionalWindow?.startAt ?? fallback?.startAt;
   const endAt = metadata?.endAt ?? parsedWindow?.endAt ?? fallback?.endAt;
   const title = metadata?.title ?? selectEventTitle(await page.locator("h1,h2,h3").allInnerTexts(), await page.title()) ?? fallback?.title;
   const questHeadings = await page.locator(".quest h2, .quest h3, .quest h4, .content__event-info__quest--title, [class*='quest__title'], [class*='quest_title']")
@@ -103,7 +110,7 @@ export async function parseDetailPage(
   }
   const questNpc = metadata?.questNpc !== undefined ? metadata.questNpc : extractNpc(questText) ?? automaticQuest?.npc ?? verifiedQuest?.questNpc ?? fallback?.questNpc ?? null;
   const missing = [
-    !title && "title", !startAt && "startAt", !endAt && "endAt",
+    !title && "title", !startAt && "startAt", !endAt && !conditionalWindow && "endAt",
     !options.allowPartial && !questName && "questName", !options.allowPartial && !questNpc && "questNpc",
   ].filter(Boolean);
   if (missing.length > 0) throw new Error(`unable to parse required fields (${missing.join(", ")}): ${url}`);
@@ -118,11 +125,10 @@ export async function parseDetailPage(
   const rewards = overrides.rewards[id] !== undefined ? resolveRewards(id, parsedRewards, overrides)
     : mergeRewards(verifiedQuest?.rewards ?? automaticQuest?.rewards ?? [], parsedRewards);
 
-  return {
+  const details = {
     id,
-    title: title!,
+    title: !endAt ? metadata?.title ?? fallback?.title ?? title! : title!,
     startAt: startAt!,
-    endAt: endAt!,
     questName,
     questLevel: metadata?.questLevel !== undefined ? metadata.questLevel : extractLevel(questText) ?? automaticQuest?.level ?? verifiedQuest?.questLevel ?? fallback?.questLevel ?? null,
     questNpc,
@@ -134,6 +140,7 @@ export async function parseDetailPage(
     sourceUrl: url,
     lastVerifiedAt: new Date().toISOString(),
   };
+  return endAt ? { ...details, endAt } : { ...details, endCondition: conditionalWindow!.endCondition };
 }
 
 function mergeRewards(verified: EventReward[], parsed: EventReward[]): EventReward[] {
@@ -151,14 +158,14 @@ function mergeRewards(verified: EventReward[], parsed: EventReward[]): EventRewa
 }
 
 async function extractQuestSection(page: Page, questName: string | null): Promise<string | null> {
-  return page.locator(".quest, .fgs__howto__box, .content__event-info").evaluateAll((blocks, target) => {
+  return page.locator(".quest, .fgs__howto__box, .ktg__howto__box, .content__event-info").evaluateAll((blocks, target) => {
     // Unknown templates retain the traditional introduction parser. Once a
     // structured quest template is present, unmatched or image-only fields
     // must not be taken from another quest elsewhere on the page.
     if (blocks.length === 0) return null;
     if (!target) return "";
     for (const block of blocks) {
-      const headingScope = block.matches(".fgs__howto__box") ? block.closest("li") : block;
+      const headingScope = block.matches(".fgs__howto__box, .ktg__howto__box") ? block.closest("li") : block;
       const headings = Array.from(headingScope?.querySelectorAll("h2,h3,h4") || []);
       if (headings.some(heading => {
         const name = heading.textContent?.trim() || heading.querySelector("img")?.getAttribute("alt")?.trim();
@@ -187,6 +194,17 @@ export function parseTimeWindow(text: string): { startAt: string; endAt: string 
   // boundary times such as 14:00 are already exclusive and must not be extended.
   if (Number(endMinute) === 59) endMinuteDate.setTime(endMinuteDate.getTime() + 60000);
   return { startAt: start, endAt: toChinaOffsetISOString(endMinuteDate) };
+}
+
+export interface ConditionalTimeWindow { startAt: string; endCondition: string }
+
+export function parseConditionalTimeWindow(text: string): ConditionalTimeWindow | null {
+  const pattern = /(\d{4})\s*(?:年|[./-])\s*(\d{1,2})\s*(?:月|[./-])\s*(\d{1,2})\s*日?\s*(\d{1,2})\s*[:：]\s*(\d{2})\s*[～~至—–-]+\s*((?:\d+(?:\.\d+){1,2}\s*)?版本\s*(?:更新\s*)?(?:维护\s*)?(?:开始\s*)?前|(?:结束(?:日期|时间)\s*)?(?:待定|另行公布|另行通知))/;
+  const match = text.match(pattern);
+  if (!match) return null;
+  const startAt = dateBoundary(match[1], match[2], match[3], match[4], match[5]);
+  if (!startAt) return null;
+  return { startAt, endCondition: match[6].replace(/\s+/g, "").trim() };
 }
 
 export function extractCoordinates(text: string): { x: number; y: number } | null {
@@ -230,7 +248,7 @@ export function resolveCompletion(id: string, overrides = loadCollectorConfigura
 }
 
 export async function extractRewards(page: Page): Promise<EventReward[]> {
-  const rewardCandidates = page.locator("[data-tooltip], [data-original-title], [class*='reward'] [title], [class*='reward'] [aria-label], [class*='reward'] img, a[data-fancybox='minion'] img, a[data-fancybox='weapon'] img");
+  const rewardCandidates = page.locator("[data-tooltip], [data-original-title], [class*='reward'] [title], [class*='reward'] [aria-label], [class*='reward'] img, [class*='reward'] .js__db_tooltip, .content__item__list .js__db_tooltip, a[data-fancybox='minion'] img, a[data-fancybox='weapon'] img");
   const rewards = new Map<string, EventReward>();
   // A page may contain navigation icons with labels. Limiting probes bounds the work while
   // still covering the reward groups used by official seasonal-event pages.
@@ -242,18 +260,48 @@ export async function extractRewards(page: Page): Promise<EventReward[]> {
       category: element.getAttribute("data-category") ||
         (element.closest("[data-fancybox='minion']") ? "宠物" : element.closest("[data-fancybox='weapon']") ? "武器" : ""),
       isHeading: Boolean(element.closest("h1,h2,h3,h4,h5,h6")),
+      itemIcon: element.matches(".js__db_tooltip") && element.querySelector("[data-ldst-href*='/lodestone/playguide/db/item/']")
+        ? (element.querySelector(".db-tooltip__item__icon__item_image") as HTMLImageElement | null)?.src || "" : "",
     }));
-    const name = attributes.name.trim();
-    if (!name || attributes.isHeading || /^(?:坐骑|防具|发型|其他|奖励|活动奖励|道具|物品|宠物|武器)$/.test(name)) continue;
-    if (rewards.has(name)) continue;
+    let name = attributes.name.trim();
+    if (attributes.isHeading || (!name && !attributes.itemIcon)) continue;
+    if (name && !validRewardName(name) && !attributes.itemIcon) continue;
+    if (!attributes.itemIcon && rewards.has(name)) continue;
 
+    let itemTooltip: EventReward | undefined;
+    let hovered = false;
+    let previousItemName: string | undefined;
+    if (attributes.itemIcon) {
+      const target = candidate.locator("[data-ldst-href*='/lodestone/playguide/db/item/']").first();
+      if (!(await target.evaluate(element => element.matches(":hover")))) {
+        previousItemName = (await readRewardItemTooltip(page, attributes.itemIcon))?.name;
+      }
+    }
     try {
-      await candidate.hover({ timeout: 500 });
-      await page.waitForTimeout(80);
+      if (attributes.itemIcon) {
+        // Official seasonal icons often have no alt/title. Their existing
+        // script inserts a Chinese item tooltip only after a short hover.
+        await candidate.locator("[data-ldst-href*='/lodestone/playguide/db/item/']").first().hover({ timeout: 1000 });
+      } else {
+        await candidate.hover({ timeout: 500 });
+        await page.waitForTimeout(80);
+      }
+      hovered = true;
     } catch {
       // Attribute text remains usable when the element is not hoverable.
     }
+    if (attributes.itemIcon && hovered) itemTooltip = await rewardItemTooltip(page, attributes.itemIcon, previousItemName);
 
+    if (itemTooltip) {
+      name = itemTooltip.name;
+      if (validRewardName(name) && !rewards.has(name)) rewards.set(name, itemTooltip);
+      continue;
+    }
+    if (!name || attributes.itemIcon) {
+      // An unrelated/stale tooltip cannot supply a missing reward name.
+      if (validRewardName(name) && !rewards.has(name)) rewards.set(name, { name, category: attributes.category, description: "", flags: [] });
+      continue;
+    }
     const tooltip = await visibleTooltipText(page);
     const description = tooltip && tooltip !== name ? tooltip : "";
     const flags = description.split(/\r?\n/)
@@ -278,6 +326,44 @@ export async function extractRewards(page: Page): Promise<EventReward[]> {
   }
 
   return [...rewards.values()];
+}
+
+function validRewardName(name: string): boolean {
+  return name.length > 0 && name.length <= 200 && !/^(?:坐骑|防具|发型|其他|奖励|活动奖励|道具|物品|宠物|武器)$/.test(name);
+}
+
+async function rewardItemTooltip(page: Page, iconUrl: string, previousName?: string): Promise<EventReward | undefined> {
+  const deadline = Date.now() + 1000;
+  do {
+    const reward = await readRewardItemTooltip(page, iconUrl);
+    if (reward && reward.name !== previousName) return reward;
+    if (Date.now() >= deadline) return undefined;
+    await page.waitForTimeout(50);
+  } while (true);
+}
+
+async function readRewardItemTooltip(page: Page, iconUrl: string): Promise<EventReward | undefined> {
+  return page.locator(".db-tooltip__wrapper, .item_detail_box").evaluateAll((elements, expectedIcon) => {
+    for (const element of elements.slice(0, 120)) {
+      if (getComputedStyle(element).display === "none" || getComputedStyle(element).visibility === "hidden") continue;
+      const icon = element.querySelector(".db-tooltip__item__icon__item_image") as HTMLImageElement | null;
+      // The item image binds the generated tooltip to the hovered source
+      // icon. A visible tooltip left over from another item is not evidence.
+      if (!icon || icon.src !== expectedIcon) continue;
+      const name = element.querySelector(".db-tooltip__item__name")?.textContent?.trim() || "";
+      if (!name) continue;
+      const category = element.querySelector(".db-tooltip__item__category")?.textContent?.trim() || "";
+      const description = (element as HTMLElement).innerText.trim();
+      const flagPattern = /(?:珍稀|独占|不可交易|可交易|唯一持有|唯一|不可在市场出售|不可出售|账号绑定|收藏品)/g;
+      const flags = Array.from(element.querySelectorAll(".rare, .ex_bind")).map(flag => flag.textContent?.trim() || "").filter(Boolean);
+      for (const line of description.split(/\r?\n/).map(line => line.trim())) {
+        const found = line.match(flagPattern);
+        if (found && found.join("") === line) flags.push(...found);
+      }
+      return { name, category, description, flags: [...new Set(flags)] };
+    }
+    return undefined;
+  }, iconUrl);
 }
 
 async function visibleTooltipText(page: Page): Promise<string> {
@@ -345,8 +431,8 @@ export function selectEventTitle(values: string[], documentTitle = ""): string |
   const title = values
     .map(value => value.trim())
     .find(value => value &&
-      !/^(?:SEASONAL EVENT|季节活动|活動獎勵|活动奖励|接受(?:任务)?条件|接取(?:任务)?条件|活动概要|活动介绍|活动时间|举办时间|参加方法|活动参加方法|道具兑换|交换奖励道具|参加活动前的准备流程)$/i.test(value) &&
-      !/^(?:关于|在《|将角色|完成(?:活动|主线|支线)任务|游玩联动任务|去获得|去收集|什么是)/.test(value));
+      !/^(?:SEASONAL EVENT|季节活动|活動獎勵|活动奖励|接受(?:任务)?条件|接取(?:任务)?条件|概要|报酬|活动概要|活动介绍|活动时间|举办时间|参加方法|活动参加方法|道具兑换|交换奖励道具|参加活动前的准备流程)$/i.test(value) &&
+      !/^(?:关于|在《|将角色|完成(?:活动|主线|支线)任务|游玩联动(?:任务|关卡)|去获得|去收集|什么是)/.test(value) && !/联动关卡$/.test(value));
   if (title) return title;
   const fallback = documentTitle.split(/\s*[|｜]\s*/)[0].trim();
   return fallback && !/^(?:《?最终幻想14》?官方网站|最终幻想14|FINAL FANTASY XIV)$/i.test(fallback) ? fallback : null;

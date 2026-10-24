@@ -38,11 +38,17 @@ export interface SeasonalEvent {
   lastVerifiedAt: string;
 }
 
+export interface PendingSeasonalEvent extends Omit<SeasonalEvent, "endAt"> {
+  endAt?: never;
+  endCondition: string;
+}
+
 export interface EventsDocument {
   schemaVersion: 1 | 2;
   dataVersion: number;
   publishedAt: string;
   events: SeasonalEvent[];
+  pendingEvents?: PendingSeasonalEvent[];
   collectionStatus?: {
     status: "ok" | "alert";
     code: string;
