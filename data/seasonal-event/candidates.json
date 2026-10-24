@@ -1,6 +1,26 @@
 {
   "schemaVersion": 1,
-  "status": "alert",
-  "code": "event_ending_without_candidate",
-  "candidates": []
+  "status": "review_required",
+  "code": "candidate_review_required",
+  "candidates": [
+    {
+      "url": "https://actff1.web.sdo.com/project/20261014keybound_brawler/o48khqshmn6e/index.html",
+      "title": "金碟游乐场“魔光键影” 10月28日正式登场！",
+      "discoveredFrom": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486",
+      "sourceType": "discovered",
+      "matchedKeywords": [
+        "金碟",
+        "联动"
+      ],
+      "reviewStatus": "pending",
+      "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486",
+      "announcementText": "亲爱的冒险者：\n\n\n亮出你的键盘，迎战面前的敌人！\n\n\n打字游戏&ldquo;魔光键影&rdquo;将在10月28日正式登场！\n\n\n&ldquo;魔光键影&rdquo;第一弹将与《FINAL FANTASY VII REMAKE Series》联动。\n\n\n游玩联动关卡，即可获得时装、坐骑、情感动作等丰富奖励道具！\n\n\n活动时间：2026年10月28日16:00～8.0版本更新维护前\n\n\n※本活动结束后将会不定期举办。\n\n\n查看详情>>>\n\n\n\n\n\n\n\n\n\n\n\n如果您遇到了任何问题，欢迎您与我们联系，给您造成不便十分抱歉。\n\n\n・ 盛趣游戏彩虹客服 专区>>>\n\n\n再次感谢各位冒险者对《最终幻想14》的大力支持。\n\n\n\n\n\n\n\n\n《最终幻想14》运营团队",
+      "stableEventId": "seasonal-529acc175255",
+      "reviewGaps": [
+        "end_time_not_announced"
+      ],
+      "knownStartAt": "2026-10-28T16:00:00+08:00",
+      "officialEndCondition": "8.0版本维护开始前"
+    }
+  ]
 }

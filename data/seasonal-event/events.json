@@ -1,13 +1,118 @@
 {
   "schemaVersion": 1,
-  "dataVersion": 4,
-  "publishedAt": "2026-10-13T18:22:10.888Z",
+  "dataVersion": 5,
+  "publishedAt": "2026-10-24T21:53:04.051Z",
   "events": [
+    {
+      "id": "seasonal-090dc058eda9",
+      "title": "守护天节与奇妙的人偶们",
+      "startAt": "2026-10-15T16:00:00+08:00",
+      "questName": "守护天节与奇妙的人偶们",
+      "questLevel": 15,
+      "questNpc": "南瓜头女人",
+      "questId": 71004,
+      "location": {
+        "territoryId": 133,
+        "mapId": 3,
+        "x": -50,
+        "y": 6.5,
+        "z": -88.39559936523438,
+        "displayX": 10.2,
+        "displayY": 9.4
+      },
+      "achievementId": 3945,
+      "rewards": [
+        {
+          "name": "狰狞熊头套",
+          "category": "头部防具",
+          "description": "珍稀\n独占\n狰狞熊头套\n\n头部防具\n\n物品品级 1\n物理防御力\n魔法防御力\n8\n14\n所有职业\n1级以上\n制作&修理\n修理等级裁衣匠 1级以上\n修理材料1级暗物质\n精制魔晶石:○武具投影:○分解:×染色:○\n\n商店贩售:无\n\n不可出售不可在市场出售",
+          "flags": [
+            "珍稀",
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "狰狞熊服",
+          "category": "身体防具",
+          "description": "珍稀\n独占\n狰狞熊服\n\n身体防具\n\n物品品级 1\n物理防御力\n魔法防御力\n37\n64\n所有职业\n1级以上\n手部、腿部及脚部无法装备其他物品\n制作&修理\n修理等级裁衣匠 1级以上\n修理材料1级暗物质\n精制魔晶石:○武具投影:○分解:×染色:○\n\n商店贩售:无\n\n不可出售不可在市场出售",
+          "flags": [
+            "珍稀",
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "狂笑守夜菇",
+          "category": "家具",
+          "description": "独占\n狂笑守夜菇\n\n家具\n\n烘托守护天节气氛的装饰品，笑容充满魅力的蘑菇。\n不可出售不可在市场出售",
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "瞪眼守夜菇",
+          "category": "家具",
+          "description": "独占\n瞪眼守夜菇\n\n家具\n\n烘托守护天节气氛的装饰品，眼神甜美可人的蘑菇。\n不可出售不可在市场出售",
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "守夜鬼魂小车",
+          "category": "家具",
+          "description": "独占\n守夜鬼魂小车\n\n家具\n\n烘托守护天节气氛的装饰品，车里坐着鬼怪人偶的货车。\n不可出售不可在市场出售",
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "守护天节海报2025-2",
+          "category": "壁挂",
+          "description": "独占\n守护天节海报2025-2\n\n壁挂\n\n描绘了守护天节情景的绘画作品。\n不可出售不可在市场出售",
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "守护天节桌面海报2025-2",
+          "category": "桌上",
+          "description": "独占\n守护天节桌面海报2025-2\n\n桌上\n\n描绘了守护天节情景的绘画作品，可以装饰在桌上。\n不可出售不可在市场出售",
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        },
+        {
+          "name": "守护天节海报2017",
+          "category": "壁挂",
+          "description": "独占\n守护天节海报2017\n\n壁挂\n\n描绘了守护天节情景的绘画作品。\n不可出售不可在市场出售",
+          "flags": [
+            "独占",
+            "不可出售",
+            "不可在市场出售"
+          ]
+        }
+      ],
+      "sourceUrl": "https://actff1.web.sdo.com/project/20261005All_Saints_Wake/hjwff6jkcti4/index.html",
+      "lastVerifiedAt": "2026-10-24T21:52:45.221Z",
+      "endAt": "2026-11-02T23:00:00+08:00"
+    },
     {
       "id": "seasonal-aae61e8dfaea",
       "title": "新生庆典与音乐的轨迹",
       "startAt": "2026-08-27T15:00:00+08:00",
-      "endAt": "2026-09-10T23:00:00+08:00",
       "questName": "新生庆典与音乐的轨迹",
       "questLevel": 15,
       "questNpc": "异国的诗人",
@@ -99,13 +204,13 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-10-13T18:22:03.578Z"
+      "lastVerifiedAt": "2026-10-24T21:52:52.166Z",
+      "endAt": "2026-09-10T23:00:00+08:00"
     },
     {
       "id": "seasonal-c5a1b1e9df45",
       "title": "最终幻想14 × Fall Guys 联动活动",
       "startAt": "2026-10-07T16:00:00+08:00",
-      "endAt": "2026-10-27T23:00:00+08:00",
       "questName": "抓紧胜利的王冠！",
       "questLevel": 15,
       "questNpc": "莱维娜",
@@ -261,7 +366,8 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
-      "lastVerifiedAt": "2026-10-13T18:21:59.980Z"
+      "lastVerifiedAt": "2026-10-24T21:52:49.655Z",
+      "endAt": "2026-10-27T23:00:00+08:00"
     }
   ]
 }
