@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 16,
-  "publishedAt": "2026-10-25T12:30:42.896Z",
+  "dataVersion": 17,
+  "publishedAt": "2026-10-25T18:30:34.577Z",
   "events": [
     {
       "id": "seasonal-090dc058eda9",
@@ -106,7 +106,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261005All_Saints_Wake/hjwff6jkcti4/index.html",
-      "lastVerifiedAt": "2026-10-25T12:30:21.343Z",
+      "lastVerifiedAt": "2026-10-25T18:30:13.334Z",
       "endAt": "2026-11-02T23:00:00+08:00",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393960"
     },
@@ -205,7 +205,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-10-25T12:30:35.379Z",
+      "lastVerifiedAt": "2026-10-25T18:30:26.484Z",
       "endAt": "2026-09-10T23:00:00+08:00"
     },
     {
@@ -367,7 +367,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
-      "lastVerifiedAt": "2026-10-25T12:30:26.186Z",
+      "lastVerifiedAt": "2026-10-25T18:30:18.165Z",
       "endAt": "2026-10-27T23:00:00+08:00",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393660"
     }
@@ -514,7 +514,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261014keybound_brawler/o48khqshmn6e/index.html",
-      "lastVerifiedAt": "2026-10-25T12:30:32.189Z",
+      "lastVerifiedAt": "2026-10-25T18:30:23.367Z",
       "endCondition": "8.0版本维护开始前",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486"
     }
