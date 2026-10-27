@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 24,
-  "publishedAt": "2026-10-27T12:27:57.037Z",
+  "dataVersion": 25,
+  "publishedAt": "2026-10-27T18:22:54.528Z",
   "events": [
     {
       "id": "seasonal-090dc058eda9",
@@ -106,7 +106,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261005All_Saints_Wake/hjwff6jkcti4/index.html",
-      "lastVerifiedAt": "2026-10-27T12:27:36.449Z",
+      "lastVerifiedAt": "2026-10-27T18:22:36.155Z",
       "endAt": "2026-11-02T23:00:00+08:00",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393960"
     },
@@ -205,171 +205,8 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-10-27T12:27:49.325Z",
+      "lastVerifiedAt": "2026-10-27T18:22:46.150Z",
       "endAt": "2026-09-10T23:00:00+08:00"
-    },
-    {
-      "id": "seasonal-c5a1b1e9df45",
-      "title": "最终幻想14 × Fall Guys 联动活动",
-      "startAt": "2026-10-07T16:00:00+08:00",
-      "questName": "抓紧胜利的王冠！",
-      "questLevel": 15,
-      "questNpc": "莱维娜",
-      "questId": 70337,
-      "location": {
-        "territoryId": 144,
-        "mapId": 196,
-        "x": -65.3643,
-        "y": 0.0697914,
-        "z": 0.811196,
-        "displayX": 4.8,
-        "displayY": 6.1
-      },
-      "achievementId": null,
-      "rewards": [
-        {
-          "name": "糖豆人针织帽",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "糖豆人卫衣",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "糖豆人打底裤",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "糖豆人运动鞋",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "哑光胜者王冠",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "闪亮胜者王冠",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "糖豆犀牛认证密钥",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "演技教材·大获全胜",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "粉红糖豆人",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "糖豆企鹅",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "金碟巨豆中心胜者王冠",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "金碟巨豆中心装饰旗",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "金碟巨豆中心甜甜圈障碍柱",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "金碟巨豆中心填充墙",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "金碟巨豆中心彩虹柱",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "金碟巨豆中心巨锤",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "管弦乐琴乐谱：快快落落糖豆人",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "肖像教材：金碟巨豆中心1",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "肖像教材：金碟巨豆中心2",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "肖像教材：金碟巨豆中心3",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "民用营养学指南",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "金碟游乐场传送网使用券",
-          "category": "",
-          "description": "",
-          "flags": []
-        },
-        {
-          "name": "追加染剂1",
-          "category": "",
-          "description": "",
-          "flags": []
-        }
-      ],
-      "sourceUrl": "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html",
-      "lastVerifiedAt": "2026-10-27T12:27:41.244Z",
-      "endAt": "2026-10-27T23:00:00+08:00",
-      "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393660"
     }
   ],
   "pendingEvents": [
@@ -514,7 +351,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261014keybound_brawler/o48khqshmn6e/index.html",
-      "lastVerifiedAt": "2026-10-27T12:27:46.230Z",
+      "lastVerifiedAt": "2026-10-27T18:22:42.747Z",
       "endCondition": "8.0版本维护开始前",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486"
     }
