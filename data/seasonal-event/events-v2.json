@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 30,
-  "publishedAt": "2026-10-29T00:29:40.675Z",
+  "dataVersion": 31,
+  "publishedAt": "2026-10-29T06:28:29.710Z",
   "events": [
     {
       "id": "seasonal-090dc058eda9",
@@ -106,7 +106,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261005All_Saints_Wake/hjwff6jkcti4/index.html",
-      "lastVerifiedAt": "2026-10-29T00:29:25.151Z",
+      "lastVerifiedAt": "2026-10-29T06:28:15.056Z",
       "endAt": "2026-11-02T23:00:00+08:00",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=393960"
     },
@@ -205,14 +205,14 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-10-29T00:29:33.682Z",
+      "lastVerifiedAt": "2026-10-29T06:28:23.898Z",
       "endAt": "2026-09-10T23:00:00+08:00"
     }
   ],
   "pendingEvents": [
     {
       "id": "seasonal-529acc175255",
-      "title": "金碟游乐场“魔光键影” 10月28日正式登场！",
+      "title": "金碟游乐场“魔光键影”正式登场！",
       "startAt": "2026-10-28T16:00:00+08:00",
       "questName": "亮出你的键盘，迎战面前的敌人！",
       "questLevel": 15,
@@ -351,7 +351,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261014keybound_brawler/o48khqshmn6e/index.html",
-      "lastVerifiedAt": "2026-10-29T00:29:30.076Z",
+      "lastVerifiedAt": "2026-10-29T06:28:20.986Z",
       "endCondition": "8.0版本维护开始前",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486"
     }
