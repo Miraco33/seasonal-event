@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 73,
-  "publishedAt": "2026-11-08T18:21:26.110Z",
+  "dataVersion": 74,
+  "publishedAt": "2026-11-09T00:23:15.192Z",
   "events": [
     {
       "id": "seasonal-aae61e8dfaea",
@@ -98,7 +98,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-11-08T18:21:14.331Z",
+      "lastVerifiedAt": "2026-11-09T00:23:02.700Z",
       "endAt": "2026-09-10T23:00:00+08:00"
     }
   ],
@@ -244,7 +244,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261014keybound_brawler/o48khqshmn6e/index.html",
-      "lastVerifiedAt": "2026-11-08T18:21:11.217Z",
+      "lastVerifiedAt": "2026-11-09T00:22:58.992Z",
       "endCondition": "8.0版本维护开始前",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486"
     }
