@@ -1,8 +1,24 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 83,
-  "publishedAt": "2026-11-11T06:23:42.474Z",
+  "dataVersion": 84,
+  "publishedAt": "2026-11-11T12:20:42.282Z",
   "events": [
+    {
+      "id": "seasonal-8ff684e6d808",
+      "title": "于烈焰炽灼的大地",
+      "startAt": "2026-11-18T16:00:00+08:00",
+      "questName": "于烈焰炽灼的大地",
+      "questLevel": 50,
+      "questNpc": "克莱夫",
+      "questId": null,
+      "location": null,
+      "achievementId": null,
+      "rewards": [],
+      "sourceUrl": "https://actff1.web.sdo.com/project/20261029ffxvi/uvjx9y9g2k2p/index.html",
+      "lastVerifiedAt": "2026-11-11T12:20:42.073Z",
+      "endAt": "2026-12-09T23:00:00+08:00",
+      "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=395456"
+    },
     {
       "id": "seasonal-aae61e8dfaea",
       "title": "新生庆典与音乐的轨迹",
@@ -98,7 +114,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-11-11T06:23:29.258Z",
+      "lastVerifiedAt": "2026-11-11T12:20:26.273Z",
       "endAt": "2026-09-10T23:00:00+08:00"
     }
   ],
@@ -244,7 +260,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261014keybound_brawler/o48khqshmn6e/index.html",
-      "lastVerifiedAt": "2026-11-11T06:23:25.565Z",
+      "lastVerifiedAt": "2026-11-11T12:20:23.286Z",
       "endCondition": "8.0版本维护开始前",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486"
     }
