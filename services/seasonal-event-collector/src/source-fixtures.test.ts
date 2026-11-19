@@ -4,6 +4,7 @@ import test, { after, before } from "node:test";
 import { chromium, type Browser } from "playwright";
 import { loadCollectorConfiguration, type CollectorOverrides } from "./configuration.js";
 import { collectEvents, parseDetailPage, type SourceOptions } from "./source.js";
+import { taskImageUrls } from "./task-images.js";
 
 // Reduced DOM fixtures captured from the official 2026 pages on 2026-10-02.
 // Time fallbacks are from official news 393210, 391316 and 393660, respectively.
@@ -32,6 +33,50 @@ test("a new how-to layout isolates the activity from its prerequisite and keeps 
   assert.equal(event.questNpc, "猫型魔法人偶");
   assert.equal(event.questLevel, 15);
 });
+
+const ff16Url = "https://actff1.web.sdo.com/project/20261029ffxvi/uvjx9y9g2k2p/index.html";
+const ff16Id = "seasonal-8ff684e6d808";
+const ff16Map = "https://static.web.sdo.com/jijiamobile/pic/ff14/20240807ffxvi/actimages/x79huWW-wiVeAvweXqmAkIc98A.png";
+const ff16Html = `<!doctype html><html><body>
+  <h1 class="ffxvi__header__logo"><img alt="最终幻想XIV x 最终幻想XVI 「纵使前路狱火焰毒」"></h1>
+  <h3>举办时间</h3><p>2026年11月18日16:00 ～ 12月9日22:59</p>
+  <div class="ffxvi__overview__conditions"><div><h3>于烈焰炽灼的大地</h3>
+    <dl class="ffxvi__overview__conditions__list"><dt>接受条件</dt><dd><ul><li class="lv">等级50（任意特职）</li></ul></dd></dl></div>
+    <div><img alt="" height="456" width="456" src="${ff16Map}"></div></div>
+  <div class="ffxvi__overview__quest"><h3>关于任务的推进</h3>
+    <p>若只有以上任务，则可前往乌尔达哈来生回廊(X:9.5 Y:12.5)的NPC“克莱夫”处接取任务「追寻心中隐痛」。</p>
+    <p>完成活动任务「纵使前路狱火焰毒」</p><img width="456" height="456" src="https://static.web.sdo.com/later-task.png"></div>
+</body></html>`;
+
+test("FF16 reads the first quest and leaves its NPC unknown without map evidence", async () => {
+  const event = await parseFixture(ff16Url, ff16Html, { eventIds: { [ff16Url]: ff16Id } });
+  assert.equal(event.title, "最终幻想XIV x 最终幻想XVI 「纵使前路狱火焰毒」");
+  assert.equal(event.questName, "于烈焰炽灼的大地");
+  assert.equal(event.questLevel, 50);
+  assert.equal(event.questNpc, null);
+  assert.equal(event.location, null);
+});
+
+test("FF16 matches the advertised first quest map and uses the final quest for completion", async () => {
+  const diagnostics: string[] = [];
+  const event = await parseFixture(ff16Url, ff16Html, {
+    eventIds: { [ff16Url]: ff16Id }, overrides: { ...indexedOverrides, ...verifiedOverrides },
+    onEnrichmentIssue: (_url, code) => diagnostics.push(code),
+    imageEvidenceReader: async (page, questName) => {
+      assert.deepEqual(await taskImageUrls(page, questName), [ff16Map]);
+      return { imageUrls: [ff16Map], text: "新人冒险者", lines: [
+        { text: "新人冒险者", confidence: 91, words: [] }, { text: "X:8.8 Y:9.8", confidence: 91, words: [] },
+      ] };
+    },
+  });
+  assert.deepEqual(diagnostics, []);
+  assert.equal(event.questNpc, "新人冒险者");
+  assert.equal(event.questId, 70334);
+  assert.equal(event.achievementId, 3409);
+  assert.deepEqual(event.location, { territoryId: 130, mapId: 13, x: -117.61399841308594, y: 4, z: -67.13819885253906,
+    displayX: 8.8, displayY: 9.8 });
+});
+
 const metadataFallbacks: SourceOptions["metadataFallbacks"] = {
   "ffxv-2026": { startAt: "2026-09-24T16:00:00+08:00", endAt: "2026-10-13T23:00:00+08:00" },
   "yokai-2026": { startAt: "2026-08-04T16:00:00+08:00", endAt: "2026-10-05T23:00:00+08:00" },

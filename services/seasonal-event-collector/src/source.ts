@@ -5,7 +5,7 @@ import { navigateWithRetry, type NetworkOptions } from "./network.js";
 import { resolveVerifiedQuest } from "./verified-quests.js";
 import { matchImageQuest, type AutomaticQuestDetails } from "./game-index.js";
 import { imageCoordinates } from "./image-ocr.js";
-import { readTaskImages, taskImageUrls, type ImageReader } from "./task-images.js";
+import { ffxviQuestBlockSelector, questBlockSelector, readTaskImages, taskImageUrls, type ImageReader } from "./task-images.js";
 import { writeDiagnostic } from "./run-status.js";
 
 export type SourceOptions = NetworkOptions & {
@@ -75,13 +75,19 @@ export async function parseDetailPage(
   const conditionalWindow = parseConditionalTimeWindow(body) ?? options.conditionalTimeFallbacks?.[id];
   const startAt = metadata?.startAt ?? parsedWindow?.startAt ?? conditionalWindow?.startAt ?? fallback?.startAt;
   const endAt = metadata?.endAt ?? parsedWindow?.endAt ?? fallback?.endAt;
-  const title = metadata?.title ?? selectEventTitle(await page.locator("h1,h2,h3").allInnerTexts(), await page.title()) ?? fallback?.title;
+  const ffxviQuestName = selectEventTitle(await page.locator(`${ffxviQuestBlockSelector} > div > h3`).allInnerTexts());
+  const ffxviTitle = ffxviQuestName
+    ? await page.locator(".ffxvi__header__logo img[alt]").evaluateAll(images => images[0]?.getAttribute("alt")?.trim()) : undefined;
+  const title = metadata?.title ?? (ffxviTitle || selectEventTitle(await page.locator("h1,h2,h3").allInnerTexts(), await page.title())) ?? fallback?.title;
   const questHeadings = await page.locator(".quest h2, .quest h3, .quest h4, .content__event-info__quest--title, [class*='quest__title'], [class*='quest_title']")
     .evaluateAll(elements => elements.map(element =>
       element.textContent?.trim() || element.querySelector("img")?.getAttribute("alt")?.trim() || ""));
-  const parsedQuestName = extractQuestName(body, title ?? "") ?? selectEventTitle(questHeadings);
+  const parsedQuestName = ffxviQuestName ?? extractQuestName(body, title ?? "") ?? selectEventTitle(questHeadings);
   const questName = metadata?.questName !== undefined ? metadata.questName : parsedQuestName ?? fallback?.questName ?? null;
   const verifiedQuest = resolveVerifiedQuest(questName, url, overrides.verifiedQuests);
+  const officialDisplay = verifiedQuest?.evidence.officialDisplay;
+  const catalogueLocation = verifiedQuest && officialDisplay
+    ? { ...verifiedQuest.location, displayX: officialDisplay.x, displayY: officialDisplay.y } : verifiedQuest?.location;
   const questText = await extractQuestSection(page, questName) ?? body;
   let automaticQuest: AutomaticQuestDetails | undefined;
   let imageMapConflict = false;
@@ -93,15 +99,16 @@ export async function parseDetailPage(
   if (imageIsRelevant && overrides.gameIndex && (await taskImageUrls(page, questName)).length > 0 && overrides.locations[id] === undefined) {
     try {
       const evidence = await (options.imageEvidenceReader ?? readTaskImages)(page, questName, options.imageReader);
-      automaticQuest = matchImageQuest(questName, questText, evidence.lines, overrides.gameIndex);
+      const verifiedDisplay = officialDisplay && verifiedQuest ? { ...officialDisplay, questId: verifiedQuest.startQuestId } : undefined;
+      automaticQuest = matchImageQuest(questName, questText, evidence.lines, overrides.gameIndex, verifiedDisplay);
       writeDiagnostic({ level: automaticQuest.code === "verified" ? "info" : "warning", code: "task_image_verification",
         url, questName, gameVersion: overrides.gameIndex.gameVersion, result: automaticQuest.code,
         imageUrls: evidence.imageUrls, coordinates: imageCoordinates(evidence.lines),
         recognizedText: evidence.text.slice(0, 1000) });
       if (automaticQuest.code !== "verified") {
         const coordinates = imageCoordinates(evidence.lines);
-        imageMapConflict = Boolean(verifiedQuest && (coordinates.length > 1 || (coordinates.length === 1 &&
-          (coordinates[0].x !== verifiedQuest.location.displayX || coordinates[0].y !== verifiedQuest.location.displayY))));
+        imageMapConflict = Boolean(catalogueLocation && (coordinates.length > 1 || (coordinates.length === 1 &&
+          (coordinates[0].x !== catalogueLocation.displayX || coordinates[0].y !== catalogueLocation.displayY))));
         issue(automaticQuest.code, `Official task image could not be uniquely verified against game data ${overrides.gameIndex.gameVersion}: ${questName}`);
       }
     } catch (error) {
@@ -115,7 +122,7 @@ export async function parseDetailPage(
   ].filter(Boolean);
   if (missing.length > 0) throw new Error(`unable to parse required fields (${missing.join(", ")}): ${url}`);
   const coordinates = extractCoordinates(questText);
-  const verifiedLocation = imageMapConflict ? undefined : verifiedQuest?.location ?? automaticQuest?.location;
+  const verifiedLocation = imageMapConflict ? undefined : catalogueLocation ?? automaticQuest?.location;
   const locationOverrides = overrides.locations[id] === undefined && verifiedLocation
     ? { ...overrides, locations: { ...overrides.locations, [id]: verifiedLocation } } : overrides;
   const location = options.allowPartial && locationOverrides.locations[id] === undefined ? null : resolveLocation(id, coordinates, locationOverrides);
@@ -158,7 +165,7 @@ function mergeRewards(verified: EventReward[], parsed: EventReward[]): EventRewa
 }
 
 async function extractQuestSection(page: Page, questName: string | null): Promise<string | null> {
-  return page.locator(".quest, .fgs__howto__box, .ktg__howto__box, .content__event-info").evaluateAll((blocks, target) => {
+  return page.locator(questBlockSelector).evaluateAll((blocks, target) => {
     // Unknown templates retain the traditional introduction parser. Once a
     // structured quest template is present, unmatched or image-only fields
     // must not be taken from another quest elsewhere on the page.
@@ -308,6 +315,18 @@ export async function extractRewards(page: Page): Promise<EventReward[]> {
       .map(value => value.trim())
       .filter(value => /(不可交易|可交易|唯一|不可出售|账号绑定|收藏品)/.test(value));
     rewards.set(name, { name, category: attributes.category, description, flags: [...new Set(flags)] });
+  }
+
+  // The crossover template renders item labels next to their icons.
+  const crossoverItems = await page.locator("#event-items.ffxvi__items .ffxvi__items__list > li > .ffxvi__items__name")
+    .evaluateAll(items => items.slice(0, 120).map(item => ({
+      name: item.querySelector("h4.event-item__list__name")?.textContent?.trim() ?? "",
+      category: item.querySelector(".event-item__list__equipment > p")?.textContent?.trim() ?? "",
+    })));
+  for (const item of crossoverItems) {
+    if (validRewardName(item.name) && !rewards.has(item.name)) {
+      rewards.set(item.name, { ...item, description: "", flags: [] });
+    }
   }
 
   // Exchange lists sometimes expose names only as table text, with unnamed

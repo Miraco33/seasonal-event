@@ -251,6 +251,71 @@
         ],
         "terminalQuestId": 70337
       }
+    },
+    {
+      "questName": "于烈焰炽灼的大地",
+      "sourcePathKeywords": [
+        "ffxvi/"
+      ],
+      "startQuestId": 70332,
+      "questNpc": "新人冒险者",
+      "questLevel": 50,
+      "location": {
+        "territoryId": 130,
+        "mapId": 13,
+        "x": -117.61399841308594,
+        "y": 4,
+        "z": -67.13819885253906,
+        "displayX": 8.8,
+        "displayY": 9.9
+      },
+      "mapTransform": {
+        "sizeFactor": 200,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "completion": {
+        "questId": 70334,
+        "achievementId": 3409
+      },
+      "questChain": [
+        {
+          "questId": 70332,
+          "questName": "于烈焰炽灼的大地",
+          "previousQuestIds": [
+            70058
+          ]
+        },
+        {
+          "questId": 70333,
+          "questName": "追寻心中隐痛",
+          "previousQuestIds": [
+            70332
+          ]
+        },
+        {
+          "questId": 70334,
+          "questName": "纵使前路狱火焰毒",
+          "previousQuestIds": [
+            70333
+          ]
+        }
+      ],
+      "evidence": {
+        "issuerNpcId": 1046043,
+        "issuerLocationId": 10212430,
+        "officialSources": [
+          "https://actff1.web.sdo.com/project/20261029ffxvi/uvjx9y9g2k2p/index.html",
+          "https://static.web.sdo.com/jijiamobile/pic/ff14/20240807ffxvi/actimages/x79huWW-wiVeAvweXqmAkIc98A.png",
+          "https://actff1.web.sdo.com/project/20240807ffxvi/"
+        ],
+        "officialDisplay": {
+          "x": 8.8,
+          "y": 9.8
+        },
+        "terminalQuestId": 70334,
+        "completionAchievementQuestId": 70334
+      }
     }
   ]
 }

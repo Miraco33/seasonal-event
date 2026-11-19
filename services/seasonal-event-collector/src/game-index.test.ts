@@ -33,6 +33,20 @@ test("coordinates alone or another NPC/region are insufficient to choose the ind
   assert.equal(matchImageQuest("黑衣青年", "", [line("X:8.5 Y:9.7")], index).location, undefined);
   assert.equal(matchImageQuest("黑衣青年", "", [line("X:8.5 Y:9.7"), line("莱维娜 金碟游乐场")], index).location, undefined);
 });
+test("a separately verified map label is exact and only applies to its own quest", () => {
+  const name = "于烈焰炽灼的大地";
+  const lines = [line("X:8.8 Y:9.8"), line("新人冒险者")];
+  const officialDisplay = { questId: 70332, x: 8.8, y: 9.8 };
+  assert.equal(matchImageQuest(name, "", lines, index).code, "image_map_not_verified");
+  assert.equal(matchImageQuest(name, "", lines, index, { ...officialDisplay, questId: 70333 }).code, "image_map_not_verified");
+  assert.equal(matchImageQuest(name, "", [line("X:8.8 Y:9.7"), lines[1]], index, officialDisplay).code, "image_map_not_verified");
+  assert.equal(matchImageQuest(name, "", [line("X:8.8 Y:9.9"), lines[1]], index, officialDisplay).code, "image_map_not_verified");
+  assert.equal(matchImageQuest(name, "", [lines[0]], index, officialDisplay).code, "image_map_not_verified");
+  const details = matchImageQuest(name, "", lines, index, officialDisplay);
+  assert.equal(details.code, "verified");
+  assert.equal(details.location?.displayY, 9.8);
+  assert.equal(details.location?.z, quest(name).location?.z);
+});
 test("new names absent from the current game snapshot and repeated quest names stay unknown", () => {
   assert.equal(matchImageQuest("未来新任务", "", [], index).code, "quest_not_in_game_index");
   const duplicate = index.quests.find(root => index.quests.some(other => other.id !== root.id && other.name === root.name))!;

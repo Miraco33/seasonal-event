@@ -89,7 +89,10 @@ export function parseGameDataIndex(value: unknown): GameDataIndex {
   return value as unknown as GameDataIndex;
 }
 
-export function matchImageQuest(questName: string | null, text: string, lines: OcrLine[], index: GameDataIndex): AutomaticQuestDetails {
+export function matchImageQuest(
+  questName: string | null, text: string, lines: OcrLine[], index: GameDataIndex,
+  verifiedDisplay?: { questId: number; x: number; y: number },
+): AutomaticQuestDetails {
   const empty = (code: AutomaticQuestDetails["code"]): AutomaticQuestDetails => ({ completion: {}, rewards: [], code });
   if (!questName) return empty("quest_not_in_game_index");
   const candidates = index.quests.filter(quest => normalizeGameText(quest.name) === normalizeGameText(questName));
@@ -101,8 +104,12 @@ export function matchImageQuest(questName: string | null, text: string, lines: O
   const coordinates = imageCoordinates(lines);
   // Multiple different coordinate pairs in one task block are ambiguous even
   // when one happens to agree with the game table (prerequisites are common).
-  if (coordinates.length !== 1 || Math.abs(coordinates[0].x - location.mapX) > 0.001 ||
-      Math.abs(coordinates[0].y - location.mapY) > 0.001) return empty("image_map_not_verified");
+  if (coordinates.length !== 1) return empty("image_map_not_verified");
+  const [{ x, y }] = coordinates;
+  // Some official images label a known quest slightly differently from the
+  // game table. Use a separately verified pair only for that exact quest.
+  const expected = verifiedDisplay?.questId === quest.id ? verifiedDisplay : { x: location.mapX, y: location.mapY };
+  if (x !== expected.x || y !== expected.y) return empty("image_map_not_verified");
   const confidentText = normalizeGameText(text + "\n" + lines.filter(line => line.confidence >= 50).map(line => line.text).join("\n"));
   const npcMatched = confidentText.includes(normalizeGameText(quest.npc.name));
   const mapMatched = [location.mapNames.map, location.mapNames.territory]
@@ -114,7 +121,7 @@ export function matchImageQuest(questName: string | null, text: string, lines: O
     .map(item => ({ name: item.name, category: item.category ?? "", description: item.description ?? "", flags: item.flags ?? [] }));
   return { npc: quest.npc.name, ...(quest.minLevel ? { level: quest.minLevel } : {}),
     location: { territoryId: location.territoryId, mapId: location.mapId, x: location.x, y: location.y, z: location.z,
-      displayX: location.mapX, displayY: location.mapY }, completion, rewards: observedRewards, code: "verified" };
+      displayX: x, displayY: y }, completion, rewards: observedRewards, code: "verified" };
 }
 
 export function automaticCompletion(root: IndexedQuest, index: GameDataIndex): AutomaticQuestDetails["completion"] {

@@ -16,6 +16,7 @@ export interface VerifiedQuestDefinition {
     issuerLocationId: number;
     terminalQuestId: number;
     officialSources: string[];
+    officialDisplay?: { x: number; y: number };
     rewardItemIds?: number[];
     completionAchievementQuestId?: number;
   };
@@ -115,6 +116,11 @@ export function parseVerifiedQuestCatalogue(value: unknown): VerifiedQuestCatalo
         (quest.completion.achievementId !== undefined && evidence.completionAchievementQuestId !== quest.completion.questId)) {
       throw new Error(`missing verified quest evidence: ${quest.questName}`);
     }
+    const officialDisplay = evidence.officialDisplay;
+    if (officialDisplay !== undefined && (!isRecord(officialDisplay) ||
+        !nearbyDisplayCoordinate(officialDisplay.x, calculatedX) || !nearbyDisplayCoordinate(officialDisplay.y, calculatedY))) {
+      throw new Error(`invalid official display coordinate evidence: ${quest.questName}`);
+    }
     if (quest.rewards !== undefined && (!Array.isArray(quest.rewards) || quest.rewards.some(reward =>
         !isRecord(reward) || !text(reward.name) || typeof reward.category !== "string" || typeof reward.description !== "string" ||
         !Array.isArray(reward.flags) || reward.flags.some(flag => typeof flag !== "string")) ||
@@ -124,6 +130,12 @@ export function parseVerifiedQuestCatalogue(value: unknown): VerifiedQuestCatalo
     }
   }
   return value as unknown as VerifiedQuestCatalogue;
+}
+
+function nearbyDisplayCoordinate(value: unknown, gameCoordinate: number): boolean {
+  return typeof value === "number" && Number.isFinite(value) &&
+    Math.abs(value * 10 - Math.round(value * 10)) <= 0.000001 &&
+    Math.abs(value - gameCoordinate) <= 0.100001;
 }
 
 function normalizeQuestName(value: string): string { return value.normalize("NFKC").replace(/\s+/g, "").toLowerCase(); }

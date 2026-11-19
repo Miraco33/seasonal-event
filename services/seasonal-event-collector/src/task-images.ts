@@ -5,8 +5,11 @@ import { prepareCoordinateImages } from "./coordinate-images.js";
 export interface TaskImageEvidence { text: string; imageUrls: string[]; lines: OcrLine[] }
 export type ImageReader = (bytes: Buffer) => Promise<OcrResult>;
 
+export const ffxviQuestBlockSelector = ".ffxvi__overview__conditions";
+export const questBlockSelector = `.quest, .fgs__howto__box, .ktg__howto__box, .content__event-info, ${ffxviQuestBlockSelector}`;
+
 export async function taskImageUrls(page: Page, questName: string | null): Promise<string[]> {
-  return page.locator(".quest, .fgs__howto__box, .ktg__howto__box, .content__event-info").evaluateAll((blocks, target) => {
+  return page.locator(questBlockSelector).evaluateAll((blocks, target) => {
     if (!target) return [];
     const normalize = (value: string) => value.normalize("NFKC").replace(/\s+/g, "").toLowerCase();
     for (const block of blocks) {

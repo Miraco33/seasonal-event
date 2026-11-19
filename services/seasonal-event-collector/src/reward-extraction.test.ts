@@ -107,3 +107,24 @@ test("named image rewards and exchange tables retain their existing extraction b
   try { assert.deepEqual((await extractRewards(page)).map(reward => reward.name), ["粉红糖豆人", "糖豆企鹅"]); }
   finally { await page.close(); }
 });
+
+test("FFXVI item lists read rendered names and categories only from the event items", { timeout: 15000 }, async () => {
+  const item = (name: string, category: string) => `<li><div class="ffxvi__items__name">
+    <h4 class="event-item__list__name">${name}</h4><div class="event-item__list__equipment"><p>${category}</p></div>
+    </div></li>`;
+  const page = await fixture(`<div class="ffxvi__items__list">${item("无关物品", "其他")}</div>
+    <div class="ffxvi__items" id="event-items">
+      <div class="ffxvi__items__list" id="pic1">${item("美堤亚上衣", "身体防具")}</div>
+      <div class="ffxvi__items__list" id="pic2">${item("托加尔魔笛", "其他")}</div>
+      <div class="ffxvi__items__list" id="pic3">${item("小托加尔", "宠物")}</div>
+      <ul class="ffxvi__items__list" id="pic4">${item("九宫幻卡：克莱夫·罗斯菲尔德", "九宫幻卡")}</ul>
+    </div>`);
+  try {
+    const rewards = await extractRewards(page);
+    assert.deepEqual(rewards.map(({ name, category }) => [name, category]), [
+      ["美堤亚上衣", "身体防具"], ["托加尔魔笛", "其他"], ["小托加尔", "宠物"],
+      ["九宫幻卡：克莱夫·罗斯菲尔德", "九宫幻卡"],
+    ]);
+    assert.ok(rewards.every(({ description, flags }) => description === "" && flags.length === 0));
+  } finally { await page.close(); }
+});

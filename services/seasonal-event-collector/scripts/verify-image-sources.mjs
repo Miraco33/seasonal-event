@@ -5,20 +5,25 @@ import { resolve } from "node:path";
 import { chromium } from "playwright";
 import { loadCollectorConfiguration } from "../dist/configuration.js";
 import { parseDetailPage } from "../dist/source.js";
+import { readTaskImages } from "../dist/task-images.js";
 
 const rounds = Number(process.argv.find(value => value.startsWith("--rounds="))?.split("=")[1] ?? 3);
 assert.ok(Number.isInteger(rounds) && rounds >= 1 && rounds <= 5);
 if (!process.env.PLAYWRIGHT_EXECUTABLE_PATH && process.platform === "win32") {
   process.env.PLAYWRIGHT_EXECUTABLE_PATH = ["C:/Program Files/Google/Chrome/Application/chrome.exe", "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"].find(existsSync);
 }
-const index = loadCollectorConfiguration().overrides.gameIndex;
+const { gameIndex: index, verifiedQuests } = loadCollectorConfiguration().overrides;
 const overrides = { locations: {}, rewards: {}, completion: {}, verifiedQuests: [], gameIndex: index };
+const ff16Quest = "于烈焰炽灼的大地";
+const ff16Map = "https://static.web.sdo.com/jijiamobile/pic/ff14/20240807ffxvi/actimages/x79huWW-wiVeAvweXqmAkIc98A.png";
 const cases = [
   { url: "https://actff1.web.sdo.com/project/20260915ffxv/index.html", quest: "黑衣青年", id: "image-ffxv",
     window: { startAt: "2026-09-24T16:00:00+08:00", endAt: "2026-10-13T23:00:00+08:00" } },
   { url: "https://actff1.web.sdo.com/project/20260928ff14fallguys/4kkmxknj3rno/index.html", quest: "抓紧胜利的王冠！", id: "image-fallguys" },
   { url: "https://actff1.web.sdo.com/project/20250912therising/gdx2t316l329/", quest: "新生庆典与拉诺西亚的小小冒险", id: "image-new-seasonal" },
   { url: "https://actff1.web.sdo.com/project/20261005All_Saints_Wake/hjwff6jkcti4/index.html", quest: "守护天节与奇妙的人偶们", id: "image-next-seasonal" },
+  { url: "https://actff1.web.sdo.com/project/20261029ffxvi/uvjx9y9g2k2p/index.html", quest: ff16Quest, id: "image-ffxvi" },
+  { url: "https://actff1.web.sdo.com/project/20240807ffxvi/", quest: ff16Quest, id: "image-ffxvi-original" },
 ];
 const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH });
 const results = [];
@@ -28,25 +33,39 @@ try {
     for (const item of cases) {
       const page = await browser.newPage({ locale: "zh-CN", timezoneId: "Asia/Shanghai" });
       const issues = [];
+      const images = [];
       const startedAt = Date.now();
       try {
-        const event = await parseDetailPage(page, item.url, { eventIds: { [item.url]: item.id }, overrides, allowPartial: true,
+        const catalogue = item.quest === ff16Quest ? verifiedQuests.filter(quest => quest.questName === ff16Quest) : [];
+        const event = await parseDetailPage(page, item.url, { eventIds: { [item.url]: item.id }, overrides: { ...overrides, verifiedQuests: catalogue }, allowPartial: true,
           metadataFallbacks: item.window ? { [item.id]: item.window } : {},
+          imageEvidenceReader: async (questPage, questName) => {
+            const evidence = await readTaskImages(questPage, questName);
+            images.push(...evidence.imageUrls);
+            return evidence;
+          },
           onEnrichmentIssue: (url, code, message) => issues.push({ url, code, message }) });
         assert.equal(event.questName, item.quest);
         const expected = index.quests.filter(quest => quest.name === item.quest);
         assert.equal(expected.length, 1);
         const root = expected[0];
-        assert.deepEqual(issues, [], "actual image recognition must succeed without an event-specific catalogue or map override");
+        assert.ok(images.length > 0, "actual task image recognition must run");
+        assert.deepEqual(issues, [], "actual task image recognition must succeed without a map override");
         assert.equal(event.questNpc, root.npc.name);
         assert.equal(event.location?.mapId, root.location.mapId);
         assert.equal(event.location?.territoryId, root.location.territoryId);
-        assert.deepEqual([event.location?.displayX, event.location?.displayY], [root.location.mapX, root.location.mapY]);
+        assert.deepEqual([event.location?.displayX, event.location?.displayY], item.quest === ff16Quest ? [8.8, 9.8] : [root.location.mapX, root.location.mapY]);
         assert.deepEqual([event.location.x, event.location.y, event.location.z], [root.location.x, root.location.y, root.location.z]);
         if (item.quest === "黑衣青年") assert.equal(event.questId, 68696);
         if (item.quest === "抓紧胜利的王冠！") { assert.equal(event.questId, 70337); assert.equal(event.rewards.length, 23); }
+        if (item.quest === ff16Quest) {
+          assert.deepEqual(images, [ff16Map]);
+          assert.equal(event.questId, 70334);
+          assert.equal(event.achievementId, 3409);
+          assert.equal(event.rewards.length, 17);
+        }
         results.push({ round, url: item.url, quest: event.questName, npc: event.questNpc, location: event.location,
-          questId: event.questId, achievementId: event.achievementId, durationMs: Date.now() - startedAt, issues });
+          questId: event.questId, achievementId: event.achievementId, catalogueUsed: catalogue.length > 0, durationMs: Date.now() - startedAt, issues });
         console.log(JSON.stringify(results.at(-1)));
       } finally { await page.close(); }
     }
@@ -56,5 +75,5 @@ try {
   await browser.close();
   await mkdir(resolve("output"), { recursive: true });
   await writeFile(resolve("output/image-source-verification.json"), JSON.stringify({ verifiedAt: new Date().toISOString(), rounds,
-    gameVersion: index.gameVersion, catalogueDisabled: true, results }, null, 2) + "\n");
+    gameVersion: index.gameVersion, results }, null, 2) + "\n");
 }

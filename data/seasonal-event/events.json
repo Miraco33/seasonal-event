@@ -1,8 +1,134 @@
 {
   "schemaVersion": 1,
-  "dataVersion": 7,
-  "publishedAt": "2026-11-02T18:29:04.437Z",
+  "dataVersion": 8,
+  "publishedAt": "2026-11-19T15:56:49.494Z",
   "events": [
+    {
+      "id": "seasonal-8ff684e6d808",
+      "title": "最终幻想XIV x 最终幻想XVI 「纵使前路狱火焰毒」",
+      "startAt": "2026-11-18T16:00:00+08:00",
+      "questName": "于烈焰炽灼的大地",
+      "questLevel": 50,
+      "questNpc": "新人冒险者",
+      "questId": 70334,
+      "location": {
+        "territoryId": 130,
+        "mapId": 13,
+        "x": -117.61399841308594,
+        "y": 4,
+        "z": -67.13819885253906,
+        "displayX": 8.8,
+        "displayY": 9.8
+      },
+      "achievementId": 3409,
+      "rewards": [
+        {
+          "name": "美堤亚上衣",
+          "category": "身体防具",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "美堤亚手铠",
+          "category": "手部防具",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "美堤亚长裤",
+          "category": "腿部防具",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "美堤亚甲靴",
+          "category": "脚部防具",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "托加尔魔笛",
+          "category": "其他",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "小托加尔",
+          "category": "宠物",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "九宫幻卡：克莱夫·罗斯菲尔德",
+          "category": "九宫幻卡",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：解围之雷",
+          "category": "管弦乐琴乐谱",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：皇国田园",
+          "category": "管弦乐琴乐谱",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：永远 - 罗扎利亚公国",
+          "category": "管弦乐琴乐谱",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：风暴之前 - 诺旺堡",
+          "category": "管弦乐琴乐谱",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：世界局势",
+          "category": "管弦乐琴乐谱",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：真正的自我",
+          "category": "管弦乐琴乐谱",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：向远方（副歌）",
+          "category": "管弦乐琴乐谱",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：禁海危航",
+          "category": "管弦乐琴乐谱",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：寻火",
+          "category": "管弦乐琴乐谱",
+          "description": "",
+          "flags": []
+        },
+        {
+          "name": "管弦乐琴乐谱：召唤兽之地",
+          "category": "管弦乐琴乐谱",
+          "description": "",
+          "flags": []
+        }
+      ],
+      "sourceUrl": "https://actff1.web.sdo.com/project/20261029ffxvi/uvjx9y9g2k2p/index.html",
+      "lastVerifiedAt": "2026-11-19T15:56:38.197Z",
+      "endAt": "2026-12-09T23:00:00+08:00"
+    },
     {
       "id": "seasonal-aae61e8dfaea",
       "title": "新生庆典与音乐的轨迹",
