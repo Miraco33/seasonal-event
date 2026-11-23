@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "dataVersion": 132,
-  "publishedAt": "2026-11-23T00:22:28.085Z",
+  "dataVersion": 133,
+  "publishedAt": "2026-11-23T06:26:19.815Z",
   "events": [
     {
       "id": "seasonal-8ff684e6d808",
@@ -126,7 +126,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261029ffxvi/uvjx9y9g2k2p/index.html",
-      "lastVerifiedAt": "2026-11-23T00:22:10.184Z",
+      "lastVerifiedAt": "2026-11-23T06:26:01.705Z",
       "endAt": "2026-12-09T23:00:00+08:00",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=395456"
     },
@@ -225,7 +225,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20260817The_Rising/7rzrnb48uiw9/index.html",
-      "lastVerifiedAt": "2026-11-23T00:22:18.495Z",
+      "lastVerifiedAt": "2026-11-23T06:26:10.597Z",
       "endAt": "2026-09-10T23:00:00+08:00"
     }
   ],
@@ -371,7 +371,7 @@
         }
       ],
       "sourceUrl": "https://actff1.web.sdo.com/project/20261014keybound_brawler/o48khqshmn6e/index.html",
-      "lastVerifiedAt": "2026-11-23T00:22:15.879Z",
+      "lastVerifiedAt": "2026-11-23T06:26:07.907Z",
       "endCondition": "8.0版本维护开始前",
       "announcementUrl": "https://cqnews.web.sdo.com/api/news/newsDetail?gameCode=ff&id=394486"
     }
